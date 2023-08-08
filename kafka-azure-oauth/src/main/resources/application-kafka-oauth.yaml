@@ -1,0 +1,16 @@
+spring:
+  kafka:
+    security:
+      protocol: SASL_SSL
+    jaas:
+      enabled: true
+      login-module: org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule
+      options:
+        clientId: "${AZURE_CLIENT_ID}"
+        tokenEndpoint: "${AZURE_AUTHORITY_HOST}${AZURE_TENANT_ID}/"
+        scope: "${OAUTH_SCOPE}"
+        tokenFile: "${AZURE_FEDERATED_TOKEN_FILE}"
+    properties:
+      "sasl.mechanism": "OAUTHBEARER"
+      "sasl.login.callback.handler.class": "com.gxf.utilities.kafka.oauth.handler.OAuthAuthenticateCallbackHandler"
+
