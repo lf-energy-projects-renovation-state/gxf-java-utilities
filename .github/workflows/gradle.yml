@@ -9,7 +9,8 @@ on:
 
 jobs:
   build:
-    runs-on: [ self-hosted, X64, Linux, default ]
+    name: Gradle build and publish
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
         with:
