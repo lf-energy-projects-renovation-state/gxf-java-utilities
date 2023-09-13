@@ -1,4 +1,5 @@
 import io.spring.gradle.dependencymanagement.internal.dsl.StandardDependencyManagementExtension
+import org.jetbrains.kotlin.com.github.gundy.semver4j.SemVer
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import java.net.URI
@@ -10,7 +11,13 @@ plugins {
 }
 
 group = "com.gxf.utilities"
-version = System.getenv("GITHUB_REF_NAME")?.replace("/", "-")?.lowercase() ?: "develop"
+version = System.getenv("GITHUB_REF_NAME")
+            ?.replace("/", "-")
+            ?.lowercase()
+            ?.let { if (SemVer.valid(it)) it.removePrefix("v") else it }
+        ?: "develop"
+
+
 
 
 
