@@ -14,7 +14,7 @@ group = "com.gxf.utilities"
 version = System.getenv("GITHUB_REF_NAME")
             ?.replace("/", "-")
             ?.lowercase()
-            ?.let { if (SemVer.valid(it)) it.removePrefix("v") else it }
+            ?.let { if (SemVer.valid(it)) it.removePrefix("v") else "${it}-SNAPSHOT" }
         ?: "develop"
 
 
