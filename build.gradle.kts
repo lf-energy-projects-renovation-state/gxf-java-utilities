@@ -35,6 +35,9 @@ subprojects {
     }
 
     extensions.configure<JavaPluginExtension> {
+        withJavadocJar()
+        withSourcesJar()
+
         toolchain {
             languageVersion.set(JavaLanguageVersion.of(17))
         }
