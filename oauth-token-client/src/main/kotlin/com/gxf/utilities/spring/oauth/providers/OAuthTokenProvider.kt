@@ -10,10 +10,12 @@ import com.microsoft.aad.msal4j.ClientCredentialParameters
 import com.microsoft.aad.msal4j.ConfidentialClientApplication
 import com.microsoft.aad.msal4j.IAuthenticationResult
 import org.springframework.context.annotation.Conditional
+import org.springframework.context.annotation.Primary
 import org.springframework.stereotype.Service
 import java.util.Optional
 
 @Service
+@Primary
 @Conditional(OAuthEnabledCondition::class)
 class OAuthTokenProvider(
     private val confidentialClientApplication: ConfidentialClientApplication,
