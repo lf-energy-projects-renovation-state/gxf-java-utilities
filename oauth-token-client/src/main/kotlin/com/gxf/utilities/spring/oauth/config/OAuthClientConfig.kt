@@ -5,6 +5,7 @@ SPDX-License-Identifier: Apache-2.0
 */
 package com.gxf.utilities.spring.oauth.config
 
+import com.gxf.utilities.spring.oauth.config.condition.OAuthEnabledCondition
 import com.gxf.utilities.spring.oauth.exceptions.OAuthTokenException
 import com.microsoft.aad.msal4j.ClientCredentialFactory
 import com.microsoft.aad.msal4j.ClientCredentialParameters
@@ -26,7 +27,7 @@ import java.util.*
 import java.util.stream.Collectors
 
 @Configuration
-@Conditional(OauthClientCondition::class)
+@Conditional(OAuthEnabledCondition::class)
 class OAuthClientConfig {
 
     companion object {

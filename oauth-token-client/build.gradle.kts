@@ -17,3 +17,20 @@ publishing {
         }
     }
 }
+
+testing {
+    suites {
+        register<JvmTestSuite>("integrationTest") {
+            useJUnitJupiter()
+            dependencies {
+                implementation(project())
+                implementation("org.springframework.boot:spring-boot-starter-test")
+                implementation("org.mock-server:mockserver-spring-test-listener:5.15.0")
+            }
+        }
+    }
+}
+
+tasks.check {
+    dependsOn("integrationTest")
+}
