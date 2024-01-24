@@ -237,11 +237,9 @@ public class MessageSigner {
   }
 
   private String keyAsMem(final Key key, final String label) {
-    final StringBuilder sb = new StringBuilder();
-    sb.append("-----BEGIN ").append(label).append("-----").append("\r\n");
-    sb.append(Base64.getMimeEncoder().encodeToString(key.getEncoded())).append("\r\n");
-    sb.append("-----END ").append(label).append("-----").append("\r\n");
-    return sb.toString();
+    return "-----BEGIN " + label + "-----" + "\r\n"
+        + Base64.getMimeEncoder().encodeToString(key.getEncoded()) + "\r\n"
+        + "-----END " + label + "-----" + "\r\n";
   }
 
   @Override

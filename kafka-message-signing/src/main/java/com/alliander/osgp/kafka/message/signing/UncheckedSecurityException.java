@@ -4,12 +4,14 @@
 
 package com.alliander.osgp.kafka.message.signing;
 
+import java.io.Serial;
 import java.security.GeneralSecurityException;
 import java.util.Objects;
 
 /** Wraps a {@link GeneralSecurityException} with an unchecked exception. */
 public class UncheckedSecurityException extends RuntimeException {
 
+  @Serial
   private static final long serialVersionUID = 5152038114753546167L;
 
   /**
