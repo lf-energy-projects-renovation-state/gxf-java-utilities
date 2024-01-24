@@ -10,3 +10,11 @@ dependencies {
 tasks.test {
     useJUnitPlatform()
 }
+
+publishing {
+    publications {
+        create<MavenPublication>("java") {
+            from(components.findByName("java"))
+        }
+    }
+}

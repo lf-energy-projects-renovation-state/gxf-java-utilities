@@ -6,3 +6,4 @@ rootProject.name = "gxf-java-utilities"
 include("kafka-azure-oauth")
 include("oauth-token-client")
 include("kafka-avro")
+include("kafka-message-signing")
