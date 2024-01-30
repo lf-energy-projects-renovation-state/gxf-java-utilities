@@ -4,6 +4,7 @@
 
 dependencies {
     implementation("org.springframework:spring-context")
+    implementation("org.springframework.kafka:spring-kafka")
 
     testImplementation("org.junit.jupiter:junit-jupiter-api")
     testImplementation("org.junit.jupiter:junit-jupiter-engine")
