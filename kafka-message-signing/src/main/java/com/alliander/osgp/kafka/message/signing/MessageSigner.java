@@ -195,7 +195,7 @@ public class MessageSigner {
     messageSignature.get(signatureBytes);
 
     try {
-      return this.tryToVerify(message, signatureBytes);
+      return this.verifySignableMessage(message, signatureBytes);
     } catch (final SignatureException e) {
       throw new UncheckedSecurityException("Unable to verify message signature", e);
     } finally {
@@ -234,13 +234,13 @@ public class MessageSigner {
     }
 
     try {
-      return this.tryToVerify(message, signatureBytes);
+      return this.verifySignableMessage(message, signatureBytes);
     } catch (final SignatureException e) {
       throw new UncheckedSecurityException("Unable to verify message signature", e);
     }
   }
 
-  private boolean tryToVerify(final SignableMessageWrapper<?> message, final byte[] signatureBytes)
+  private boolean verifySignableMessage(final SignableMessageWrapper<?> message, final byte[] signatureBytes)
       throws SignatureException {
     message.setSignature(null);
     synchronized (this.verificationSignature) {
