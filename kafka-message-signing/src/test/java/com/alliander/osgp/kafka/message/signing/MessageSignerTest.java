@@ -6,10 +6,11 @@ package com.alliander.osgp.kafka.message.signing;
 
 import static com.alliander.osgp.kafka.message.signing.MessageSigner.RECORD_HEADER_KEY_SIGNATURE;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.alliander.osgp.kafka.message.wrapper.SignableMessageWrapper;
 import java.io.BufferedReader;
-import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
@@ -123,10 +124,14 @@ class MessageSignerTest {
   void doesNotVerifyRecordsWithoutSignature() {
     final TestableWrapper messageWrapper = this.messageWrapper();
     final ProducerRecord<String, String> producerRecord = this.producerRecord();
+    final String expectedMessage = "This ProducerRecord does not contain a signature header";
 
-    final boolean signatureWasVerified = this.messageSigner.verifyRecordHeader(messageWrapper, producerRecord);
+    final Exception exception = assertThrows(IllegalStateException.class, () ->
+      this.messageSigner.verifyRecordHeader(messageWrapper, producerRecord)
+    );
+    final String actualMessage = exception.getMessage();
 
-    assertThat(signatureWasVerified).isFalse();
+    assertTrue(actualMessage.contains(expectedMessage));
   }
 
   @Test
@@ -200,7 +205,7 @@ class MessageSignerTest {
             .build();
 
     final TestableWrapper messageWrapper = this.messageWrapper();
-    final ProducerRecord producerRecord = this.producerRecord();
+    final ProducerRecord<String, String> producerRecord = this.producerRecord();
     messageSignerWithKeysFromResources.signRecordHeader(messageWrapper, producerRecord);
     final boolean signatureWasVerified = messageSignerWithKeysFromResources.verifyRecordHeader(messageWrapper, producerRecord);
 
@@ -232,7 +237,7 @@ class MessageSignerTest {
     return messageWrapper;
   }
 
-  private ProducerRecord<String, String> properlySignedRecord(TestableWrapper messageWrapper) {
+  private ProducerRecord<String, String> properlySignedRecord(final TestableWrapper messageWrapper) {
     final ProducerRecord<String, String> producerRecord = this.producerRecord();
     this.messageSigner.signRecordHeader(messageWrapper, producerRecord);
     return producerRecord;
@@ -254,7 +259,7 @@ class MessageSignerTest {
   }
 
   private ProducerRecord<String, String> producerRecord() {
-    return new ProducerRecord("topic", "value");
+    return new ProducerRecord<>("topic", "value");
   }
 
   private static class TestableWrapper extends SignableMessageWrapper<String> {
@@ -265,7 +270,7 @@ class MessageSignerTest {
     }
 
     @Override
-    public ByteBuffer toByteBuffer() throws IOException {
+    public ByteBuffer toByteBuffer() {
       return ByteBuffer.wrap(this.message.getBytes(StandardCharsets.UTF_8));
     }
 
