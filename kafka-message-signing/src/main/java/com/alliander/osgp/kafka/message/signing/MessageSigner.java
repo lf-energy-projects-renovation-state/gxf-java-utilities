@@ -48,13 +48,19 @@ public class MessageSigner {
   private String signatureKeyAlgorithm;
   private int signatureKeySize;
 
-  private Signature signingSignature;
-  private Signature verificationSignature;
+  private final Signature signingSignature;
+  private final Signature verificationSignature;
 
   private PrivateKey signingKey;
   private PublicKey verificationKey;
 
   private MessageSigner(final Builder builder) {
+    this.signingSignature =
+        signatureInstance(
+            builder.signatureAlgorithm, builder.signatureProvider, builder.signingKey);
+    this.verificationSignature =
+        signatureInstance(
+            builder.signatureAlgorithm, builder.signatureProvider, builder.verificationKey);
     this.signingEnabled = builder.signingEnabled;
     if (!this.signingEnabled) {
       return;
@@ -69,12 +75,6 @@ public class MessageSigner {
     }
     this.signingKey = builder.signingKey;
     this.verificationKey = builder.verificationKey;
-    this.signingSignature =
-        signatureInstance(
-            builder.signatureAlgorithm, builder.signatureProvider, builder.signingKey);
-    this.verificationSignature =
-        signatureInstance(
-            builder.signatureAlgorithm, builder.signatureProvider, builder.verificationKey);
     if (builder.signatureProvider != null) {
       this.signatureProvider = builder.signatureProvider;
     } else if (this.signingSignature != null) {
@@ -195,7 +195,7 @@ public class MessageSigner {
     messageSignature.get(signatureBytes);
 
     try {
-      return tryToVerify(message, signatureBytes);
+      return this.tryToVerify(message, signatureBytes);
     } catch (final SignatureException e) {
       throw new UncheckedSecurityException("Unable to verify message signature", e);
     } finally {
@@ -234,13 +234,13 @@ public class MessageSigner {
     }
 
     try {
-      return tryToVerify(message, signatureBytes);
+      return this.tryToVerify(message, signatureBytes);
     } catch (final SignatureException e) {
       throw new UncheckedSecurityException("Unable to verify message signature", e);
     }
   }
 
-  private boolean tryToVerify(SignableMessageWrapper<?> message, byte[] signatureBytes)
+  private boolean tryToVerify(final SignableMessageWrapper<?> message, final byte[] signatureBytes)
       throws SignatureException {
     message.setSignature(null);
     synchronized (this.verificationSignature) {

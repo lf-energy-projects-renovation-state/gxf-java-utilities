@@ -71,8 +71,8 @@ class MessageSignerTest {
 
   @Test
   void signsRecordHeaderWithoutSignature() {
-    final SignableMessageWrapper<?> messageWrapper = this.messageWrapper();
-    final ProducerRecord record = producerRecord();
+    final SignableMessageWrapper<String> messageWrapper = this.messageWrapper();
+    final ProducerRecord<String, String> record = this.producerRecord();
 
     this.messageSigner.signRecordHeader(messageWrapper, record);
 
@@ -83,7 +83,7 @@ class MessageSignerTest {
   void signsRecordHeaderReplacingSignature() {
     final byte[] randomSignature = this.randomSignature();
     final TestableWrapper messageWrapper = this.messageWrapper();
-    final ProducerRecord record = producerRecord();
+    final ProducerRecord<String, String> record = this.producerRecord();
 
     this.messageSigner.signRecordHeader(messageWrapper, record);
 
@@ -103,7 +103,7 @@ class MessageSignerTest {
   @Test
   void verifiesRecordsWithValidSignature() {
     final TestableWrapper message = this.messageWrapper();
-    final ProducerRecord producerRecord = this.properlySignedRecord(message);
+    final ProducerRecord<String, String> producerRecord = this.properlySignedRecord(message);
 
     final boolean signatureWasVerified = this.messageSigner.verifyRecordHeader(message, producerRecord);
 
@@ -122,7 +122,7 @@ class MessageSignerTest {
   @Test
   void doesNotVerifyRecordsWithoutSignature() {
     final TestableWrapper messageWrapper = this.messageWrapper();
-    final ProducerRecord producerRecord = this.producerRecord();
+    final ProducerRecord<String, String> producerRecord = this.producerRecord();
 
     final boolean signatureWasVerified = this.messageSigner.verifyRecordHeader(messageWrapper, producerRecord);
 
@@ -232,8 +232,8 @@ class MessageSignerTest {
     return messageWrapper;
   }
 
-  private ProducerRecord properlySignedRecord(TestableWrapper messageWrapper) {
-    final ProducerRecord producerRecord = this.producerRecord();
+  private ProducerRecord<String, String> properlySignedRecord(TestableWrapper messageWrapper) {
+    final ProducerRecord<String, String> producerRecord = this.producerRecord();
     this.messageSigner.signRecordHeader(messageWrapper, producerRecord);
     return producerRecord;
   }
@@ -253,7 +253,7 @@ class MessageSignerTest {
     return bytes;
   }
 
-  private ProducerRecord producerRecord() {
+  private ProducerRecord<String, String> producerRecord() {
     return new ProducerRecord("topic", "value");
   }
 
