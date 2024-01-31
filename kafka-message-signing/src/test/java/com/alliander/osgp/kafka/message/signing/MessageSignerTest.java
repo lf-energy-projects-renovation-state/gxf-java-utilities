@@ -18,6 +18,8 @@ import java.security.KeyPair;
 import java.security.SecureRandom;
 import java.util.Random;
 import java.util.stream.Collectors;
+import org.apache.avro.Schema;
+import org.apache.avro.specific.SpecificRecordBase;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.junit.jupiter.api.Test;
 
@@ -60,36 +62,42 @@ class MessageSignerTest {
   }
 
   @Test
-  void signsMessageReplacingSignature() {
-    final byte[] randomSignature = this.randomSignature();
-    final TestableWrapper messageWrapper = this.messageWrapper();
-
-    this.messageSigner.sign(messageWrapper);
-
-    final byte[] actualSignature = this.bytes(messageWrapper.getSignature());
-    assertThat(actualSignature).isNotNull().isNotEqualTo(randomSignature);
-  }
-
-  @Test
   void signsRecordHeaderWithoutSignature() {
-    final SignableMessageWrapper<String> messageWrapper = this.messageWrapper();
-    final ProducerRecord<String, String> record = this.producerRecord();
+    final ProducerRecord<String, Message> record = this.producerRecord();
 
-    this.messageSigner.signRecordHeader(messageWrapper, record);
+    this.messageSigner.sign(record);
 
     assertThat(record.headers().lastHeader(RECORD_HEADER_KEY_SIGNATURE)).isNotNull();
   }
 
   @Test
-  void signsRecordHeaderReplacingSignature() {
+  void signsMessageReplacingSignature() {
     final byte[] randomSignature = this.randomSignature();
     final TestableWrapper messageWrapper = this.messageWrapper();
-    final ProducerRecord<String, String> record = this.producerRecord();
+    messageWrapper.setSignature(ByteBuffer.wrap(randomSignature));
 
-    this.messageSigner.signRecordHeader(messageWrapper, record);
+    final byte[] actualSignatureBefore = this.bytes(messageWrapper.getSignature());
+    assertThat(actualSignatureBefore).isNotNull().isEqualTo(randomSignature);
 
-    final byte[] actualSignature = record.headers().lastHeader(RECORD_HEADER_KEY_SIGNATURE).value();
-    assertThat(actualSignature).isNotNull().isNotEqualTo(randomSignature);
+    this.messageSigner.sign(messageWrapper);
+
+    final byte[] actualSignatureAfter = this.bytes(messageWrapper.getSignature());
+    assertThat(actualSignatureAfter).isNotNull().isNotEqualTo(randomSignature);
+  }
+
+  @Test
+  void signsRecordHeaderReplacingSignature() {
+    final byte[] randomSignature = this.randomSignature();
+    final ProducerRecord<String, Message> record = this.producerRecord();
+    record.headers().add(RECORD_HEADER_KEY_SIGNATURE, randomSignature);
+
+    final byte[] actualSignatureBefore = record.headers().lastHeader(RECORD_HEADER_KEY_SIGNATURE).value();
+    assertThat(actualSignatureBefore).isNotNull().isEqualTo(randomSignature);
+
+    this.messageSigner.sign(record);
+
+    final byte[] actualSignatureAfter = record.headers().lastHeader(RECORD_HEADER_KEY_SIGNATURE).value();
+    assertThat(actualSignatureAfter).isNotNull().isNotEqualTo(randomSignature);
   }
 
   @Test
@@ -103,10 +111,9 @@ class MessageSignerTest {
 
   @Test
   void verifiesRecordsWithValidSignature() {
-    final TestableWrapper message = this.messageWrapper();
-    final ProducerRecord<String, String> producerRecord = this.properlySignedRecord(message);
+    final ProducerRecord<String, Message> producerRecord = this.properlySignedRecord();
 
-    final boolean signatureWasVerified = this.messageSigner.verifyRecordHeader(message, producerRecord);
+    final boolean signatureWasVerified = this.messageSigner.verify(producerRecord);
 
     assertThat(signatureWasVerified).isTrue();
   }
@@ -122,12 +129,11 @@ class MessageSignerTest {
 
   @Test
   void doesNotVerifyRecordsWithoutSignature() {
-    final TestableWrapper messageWrapper = this.messageWrapper();
-    final ProducerRecord<String, String> producerRecord = this.producerRecord();
+    final ProducerRecord<String, Message> producerRecord = this.producerRecord();
     final String expectedMessage = "This ProducerRecord does not contain a signature header";
 
     final Exception exception = assertThrows(IllegalStateException.class, () ->
-      this.messageSigner.verifyRecordHeader(messageWrapper, producerRecord)
+      this.messageSigner.verify(producerRecord)
     );
     final String actualMessage = exception.getMessage();
 
@@ -204,10 +210,9 @@ class MessageSignerTest {
             .verificationKey(this.fromPemResource("/rsa-public.pem"))
             .build();
 
-    final TestableWrapper messageWrapper = this.messageWrapper();
-    final ProducerRecord<String, String> producerRecord = this.producerRecord();
-    messageSignerWithKeysFromResources.signRecordHeader(messageWrapper, producerRecord);
-    final boolean signatureWasVerified = messageSignerWithKeysFromResources.verifyRecordHeader(messageWrapper, producerRecord);
+    final ProducerRecord<String, Message> producerRecord = this.producerRecord();
+    messageSignerWithKeysFromResources.sign(producerRecord);
+    final boolean signatureWasVerified = messageSignerWithKeysFromResources.verify(producerRecord);
 
     assertThat(signatureWasVerified).isTrue();
   }
@@ -237,9 +242,9 @@ class MessageSignerTest {
     return messageWrapper;
   }
 
-  private ProducerRecord<String, String> properlySignedRecord(final TestableWrapper messageWrapper) {
-    final ProducerRecord<String, String> producerRecord = this.producerRecord();
-    this.messageSigner.signRecordHeader(messageWrapper, producerRecord);
+  private ProducerRecord<String, Message> properlySignedRecord() {
+    final ProducerRecord<String, Message> producerRecord = this.producerRecord();
+    this.messageSigner.sign(producerRecord);
     return producerRecord;
   }
 
@@ -258,8 +263,36 @@ class MessageSignerTest {
     return bytes;
   }
 
-  private ProducerRecord<String, String> producerRecord() {
-    return new ProducerRecord<>("topic", "value");
+  private ProducerRecord<String, Message> producerRecord() {
+    final Message message = new Message("super special message");
+
+    return new ProducerRecord<>("topic", message);
+  }
+
+  static class Message extends SpecificRecordBase {
+    private String message;
+
+    public Message() {
+    }
+
+    Message(final String message) {
+      this.message = message;
+    }
+
+    @Override
+    public Schema getSchema() {
+      return new org.apache.avro.Schema.Parser().parse("{\"type\":\"record\",\"name\":\"Message\",\"namespace\":\"com.alliander.osgp.kafka.message.signing\",\"fields\":[{\"name\":\"message\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}}]}");
+    }
+
+    @Override
+    public Object get(final int field) {
+      return this.message;
+    }
+
+    @Override
+    public void put(final int field, final Object value) {
+      this.message = value != null ? value.toString() : null;
+    }
   }
 
   private static class TestableWrapper extends SignableMessageWrapper<String> {

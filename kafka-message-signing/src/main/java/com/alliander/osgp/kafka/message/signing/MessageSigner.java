@@ -25,6 +25,8 @@ import java.util.Base64;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.regex.Pattern;
+import org.apache.avro.message.BinaryMessageEncoder;
+import org.apache.avro.specific.SpecificRecordBase;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.header.Header;
 
@@ -112,16 +114,15 @@ public class MessageSigner {
    * Signs the provided {@code producerRecord} in the header, overwriting an existing signature, if a non-null value is
    * already set.
    *
-   * @param message the message
    * @param producerRecord the record to be signed
    * @throws IllegalStateException if this message signer has a public key for signature
    *     verification, but does not have the private key needed for signing messages.
    * @throws UncheckedIOException if determining the bytes for the message throws an IOException.
    * @throws UncheckedSecurityException if the signing process throws a SignatureException.
    */
-  public <T> void signRecordHeader(final SignableMessageWrapper<T> message, final ProducerRecord<String, T> producerRecord) {
+  public void sign(final ProducerRecord<String, ? extends SpecificRecordBase> producerRecord) {
     if (this.signingEnabled) {
-      final byte[] signature = this.signature(message);
+      final byte[] signature = this.signature(producerRecord);
       producerRecord.headers().add(RECORD_HEADER_KEY_SIGNATURE, signature);
     }
   }
@@ -164,6 +165,47 @@ public class MessageSigner {
     }
   }
 
+  /**
+   * Determines the signature for the given {@code producerRecord}.
+   *
+   * <p>The value for the signature in the record will be set to {@code null} to properly determine
+   * the signature, but is restored to its original value before this method returns.
+   *
+   * @param producerRecord the record to be signed
+   * @return the signature for the record
+   * @throws IllegalStateException if this message signer has a public key for signature
+   *     verification, but does not have the private key needed for signing messages.
+   * @throws UncheckedIOException if determining the bytes throws an IOException.
+   * @throws UncheckedSecurityException if the signing process throws a SignatureException.
+   */
+  public byte[] signature(final ProducerRecord<String, ? extends SpecificRecordBase> producerRecord) {
+    if (!this.canSignMessages()) {
+      throw new IllegalStateException(
+          "This MessageSigner is not configured for signing, it can only be used for verification");
+    }
+    final Header oldSignatureHeader = producerRecord.headers().lastHeader(RECORD_HEADER_KEY_SIGNATURE);
+    try {
+      producerRecord.headers().remove(RECORD_HEADER_KEY_SIGNATURE);
+      synchronized (this.signingSignature) {
+        final byte[] messageBytes;
+        final SpecificRecordBase specificRecordBase = producerRecord.value();
+        if (this.stripAvroHeader) {
+          messageBytes = this.stripAvroHeader(this.toByteBuffer(specificRecordBase));
+        } else {
+          messageBytes = this.toByteBuffer(specificRecordBase).array();
+        }
+        this.signingSignature.update(messageBytes);
+        return this.signingSignature.sign();
+      }
+    } catch (final SignatureException e) {
+      throw new UncheckedSecurityException("Unable to sign message", e);
+    } finally {
+      if(oldSignatureHeader != null) {
+        producerRecord.headers().add(RECORD_HEADER_KEY_SIGNATURE, oldSignatureHeader.value());
+      }
+    }
+  }
+
   public boolean canVerifyMessageSignatures() {
     return this.signingEnabled && this.verificationSignature != null;
   }
@@ -195,7 +237,10 @@ public class MessageSigner {
     messageSignature.get(signatureBytes);
 
     try {
-      return this.verifySignableMessage(message, signatureBytes);
+      message.setSignature(null);
+      synchronized (this.verificationSignature) {
+        return this.verifySignatureBytes(signatureBytes, this.toByteBuffer(message));
+      }
     } catch (final SignatureException e) {
       throw new UncheckedSecurityException("Unable to verify message signature", e);
     } finally {
@@ -205,19 +250,18 @@ public class MessageSigner {
   }
 
   /**
-   * Verifies the signature of the provided {@code message}.
+   * Verifies the signature of the provided {@code producerRecord}.
    *
-   * @param message the message
    * @param producerRecord the record to be verified
    * @return {@code true} if the signature of the given {@code producerRecord} was verified; {@code false}
    *     if not.
    * @throws IllegalStateException if this message signer has a private key needed for signing
    *     messages, but does not have the public key for signature verification.
-   * @throws UncheckedIOException if determining the bytes for the message throws an IOException.
+   * @throws UncheckedIOException if determining the bytes throws an IOException.
    * @throws UncheckedSecurityException if the signature verification process throws a
    *     SignatureException.
    */
-  public <T> boolean verifyRecordHeader(final SignableMessageWrapper<T> message, final ProducerRecord<String, T> producerRecord) {
+  public boolean verify(final ProducerRecord<String, ? extends SpecificRecordBase> producerRecord) {
     if (!this.canVerifyMessageSignatures()) {
       throw new IllegalStateException(
           "This MessageSigner is not configured for verification, it can only be used for signing");
@@ -234,25 +278,25 @@ public class MessageSigner {
     }
 
     try {
-      return this.verifySignableMessage(message, signatureBytes);
+      producerRecord.headers().remove(RECORD_HEADER_KEY_SIGNATURE);
+      synchronized (this.verificationSignature) {
+        final SpecificRecordBase specificRecordBase = producerRecord.value();
+        return this.verifySignatureBytes(signatureBytes, this.toByteBuffer(specificRecordBase));
+      }
     } catch (final SignatureException e) {
       throw new UncheckedSecurityException("Unable to verify message signature", e);
     }
   }
 
-  private boolean verifySignableMessage(final SignableMessageWrapper<?> message, final byte[] signatureBytes)
-      throws SignatureException {
-    message.setSignature(null);
-    synchronized (this.verificationSignature) {
-      final byte[] messageBytes;
-      if (this.stripAvroHeader) {
-        messageBytes = this.stripAvroHeader(this.toByteBuffer(message));
-      } else {
-        messageBytes = this.toByteBuffer(message).array();
-      }
-      this.verificationSignature.update(messageBytes);
-      return this.verificationSignature.verify(signatureBytes);
+  private boolean verifySignatureBytes(final byte[] signatureBytes, final ByteBuffer messageByteBuffer) throws SignatureException {
+    final byte[] messageBytes;
+    if (this.stripAvroHeader) {
+      messageBytes = this.stripAvroHeader(messageByteBuffer);
+    } else {
+      messageBytes = messageByteBuffer.array();
     }
+    this.verificationSignature.update(messageBytes);
+    return this.verificationSignature.verify(signatureBytes);
   }
 
   private boolean hasAvroHeader(final byte[] bytes) {
@@ -273,6 +317,14 @@ public class MessageSigner {
   private ByteBuffer toByteBuffer(final SignableMessageWrapper<?> message) {
     try {
       return message.toByteBuffer();
+    } catch (final IOException e) {
+      throw new UncheckedIOException("Unable to determine ByteBuffer for Message", e);
+    }
+  }
+
+  private ByteBuffer toByteBuffer(final SpecificRecordBase message) {
+    try {
+      return new BinaryMessageEncoder<>(message.getSpecificData(), message.getSchema()).encode(message);
     } catch (final IOException e) {
       throw new UncheckedIOException("Unable to determine ByteBuffer for Message", e);
     }

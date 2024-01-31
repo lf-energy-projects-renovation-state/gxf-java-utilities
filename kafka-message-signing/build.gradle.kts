@@ -6,6 +6,8 @@ dependencies {
     implementation("org.springframework:spring-context")
     implementation("org.springframework.kafka:spring-kafka")
 
+    api(libs.avro)
+
     testImplementation("org.junit.jupiter:junit-jupiter-api")
     testImplementation("org.junit.jupiter:junit-jupiter-engine")
     testImplementation("org.assertj:assertj-core")
