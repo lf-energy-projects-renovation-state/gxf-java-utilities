@@ -14,9 +14,6 @@ import org.springframework.util.StreamUtils;
 
 @Configuration
 public class MessageSigningAutoConfiguration {
-  public static final String SIGNING_KEY_NAME = "private signing key";
-
-  public static final String VERIFICATION_KEY_NAME = "public verification key";
 
   @Value("${message-signing.enabled}")
   private boolean signingEnabled;
