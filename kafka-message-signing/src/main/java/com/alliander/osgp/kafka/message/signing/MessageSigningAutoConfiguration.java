@@ -74,8 +74,8 @@ public class MessageSigningAutoConfiguration {
   }
 
   private String fromPemResource(final String name) {
-    var thisClass = this.getClass();
-    var stream = thisClass.getResourceAsStream(name);
+    final var thisClass = this.getClass();
+    final var stream = thisClass.getResourceAsStream(name);
     return new BufferedReader(
         new InputStreamReader(
             stream, StandardCharsets.ISO_8859_1))
