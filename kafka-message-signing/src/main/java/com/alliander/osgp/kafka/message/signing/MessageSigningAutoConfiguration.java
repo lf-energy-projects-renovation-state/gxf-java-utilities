@@ -1,8 +1,11 @@
 package com.alliander.osgp.kafka.message.signing;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
+import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -34,10 +37,10 @@ public class MessageSigningAutoConfiguration {
   private int signatureKeySize;
 
   @Value("${message-signing.signature.key.private:#{null}}")
-  private Resource signingKeyResource;
+  private String signingKeyResource;
 
   @Value("${message-signing.signature.key.public:#{null}}")
-  private Resource verificationKeyResource;
+  private String verificationKeyResource;
 
   @Bean
   public MessageSigner messageSigner() {
@@ -49,8 +52,8 @@ public class MessageSigningAutoConfiguration {
           .signatureProvider(this.signatureProvider)
           .signatureKeyAlgorithm(this.signatureKeyAlgorithm)
           .signatureKeySize(this.signatureKeySize)
-          .signingKey(this.readKeyFromPemResource(this.signingKeyResource, SIGNING_KEY_NAME))
-          .verificationKey(this.readKeyFromPemResource(this.verificationKeyResource, VERIFICATION_KEY_NAME))
+          .signingKey(this.fromPemResource(this.signingKeyResource))
+          .verificationKey(this.fromPemResource(this.verificationKeyResource))
           .build();
     } else {
       return MessageSigner.newBuilder()
@@ -68,5 +71,15 @@ public class MessageSigningAutoConfiguration {
     } catch (final IOException e) {
       throw new UncheckedIOException("Unable to read " + name + " as ISO-LATIN-1 PEM text", e);
     }
+  }
+
+  private String fromPemResource(final String name) {
+    var thisClass = this.getClass();
+    var stream = thisClass.getResourceAsStream(name);
+    return new BufferedReader(
+        new InputStreamReader(
+            stream, StandardCharsets.ISO_8859_1))
+        .lines()
+        .collect(Collectors.joining(System.lineSeparator()));
   }
 }
