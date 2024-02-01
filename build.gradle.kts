@@ -5,9 +5,9 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import java.net.URI
 
 plugins {
-    id("io.spring.dependency-management") version "1.1.0" apply false
-    kotlin("jvm") version "1.9.0" apply false
-    kotlin("plugin.spring") version "1.9.0" apply false
+    id("io.spring.dependency-management") version "1.1.4" apply false
+    kotlin("jvm") version "1.9.22" apply false
+    kotlin("plugin.spring") version "1.9.22" apply false
 }
 
 group = "com.gxf.utilities"
@@ -16,10 +16,6 @@ version = System.getenv("GITHUB_REF_NAME")
             ?.lowercase()
             ?.let { if (SemVer.valid(it)) it.removePrefix("v") else "${it}-SNAPSHOT" }
         ?: "develop"
-
-
-
-
 
 subprojects {
     apply(plugin = "org.jetbrains.kotlin.jvm")
@@ -39,19 +35,19 @@ subprojects {
         withSourcesJar()
 
         toolchain {
-            languageVersion.set(JavaLanguageVersion.of(17))
+            languageVersion.set(JavaLanguageVersion.of(21))
         }
     }
 
     extensions.configure<StandardDependencyManagementExtension> {
         imports {
-            mavenBom("org.springframework.boot:spring-boot-dependencies:3.1.3")
+            mavenBom("org.springframework.boot:spring-boot-dependencies:3.2.2")
         }
     }
 
     tasks.withType<KotlinCompile> {
         compilerOptions {
-            jvmTarget = JvmTarget.JVM_17
+            jvmTarget = JvmTarget.JVM_21
             freeCompilerArgs = listOf("-Xjsr305=strict")
         }
     }
