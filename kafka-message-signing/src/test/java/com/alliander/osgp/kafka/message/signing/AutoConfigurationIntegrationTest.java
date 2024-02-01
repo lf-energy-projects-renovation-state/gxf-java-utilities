@@ -1,5 +1,7 @@
 package com.alliander.osgp.kafka.message.signing;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.Test;
@@ -18,5 +20,9 @@ class AutoConfigurationIntegrationTest {
   @Test
   void autoConfigurationIntegrationTest() {
     assertTrue(this.messageSigner.isSigningEnabled());
+    assertTrue(this.messageSigner.canSignMessages());
+    assertTrue(this.messageSigner.canVerifyMessageSignatures());
+    assertNotNull(this.messageSigner.signingKey().get());
+    assertNotNull(this.messageSigner.verificationKey().get());
   }
 }
