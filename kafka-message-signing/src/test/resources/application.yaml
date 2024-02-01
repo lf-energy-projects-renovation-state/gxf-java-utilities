@@ -1,0 +1,10 @@
+message-signing:
+  enabled: true
+  strip-headers: true
+  signature:
+    algorithm: SHA256withRSA
+    provider: SunRsaSign
+    key:
+      algorithm: RSA
+      size: 2048
+      private: file:/etc/osp/kafka-message-signing/keys/message-signing-rsa-private.pem

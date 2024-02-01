@@ -29,6 +29,7 @@ import org.apache.avro.message.BinaryMessageEncoder;
 import org.apache.avro.specific.SpecificRecordBase;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.header.Header;
+import org.springframework.stereotype.Service;
 
 public class MessageSigner {
   public static final String DEFAULT_SIGNATURE_ALGORITHM = "SHA256withRSA";
