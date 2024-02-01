@@ -34,10 +34,10 @@ public class MessageSigningAutoConfiguration {
   private int signatureKeySize;
 
   @Value("${message-signing.signature.key.private:#{null}}")
-  private String signingKeyResource;
+  private Resource signingKeyResource;
 
   @Value("${message-signing.signature.key.public:#{null}}")
-  private String verificationKeyResource;
+  private Resource verificationKeyResource;
 
   @Bean
   public MessageSigner messageSigner() {
@@ -49,8 +49,8 @@ public class MessageSigningAutoConfiguration {
           .signatureProvider(this.signatureProvider)
           .signatureKeyAlgorithm(this.signatureKeyAlgorithm)
           .signatureKeySize(this.signatureKeySize)
-          .signingKey(this.fromPemResource(this.signingKeyResource))
-          .verificationKey(this.fromPemResource(this.verificationKeyResource))
+          .signingKey(this.readKeyFromPemResource(this.signingKeyResource))
+          .verificationKey(this.readKeyFromPemResource(this.verificationKeyResource))
           .build();
     } else {
       return MessageSigner.newBuilder()
@@ -59,24 +59,14 @@ public class MessageSigningAutoConfiguration {
     }
   }
 
-  private String readKeyFromPemResource(final Resource keyResource, final String name) {
+  private String readKeyFromPemResource(final Resource keyResource) {
     if (keyResource == null) {
       return null;
     }
     try {
-      return StreamUtils.copyToString(keyResource.getInputStream(), StandardCharsets.ISO_8859_1);
+      return keyResource.getContentAsString(StandardCharsets.ISO_8859_1);
     } catch (final IOException e) {
-      throw new UncheckedIOException("Unable to read " + name + " as ISO-LATIN-1 PEM text", e);
+      throw new UncheckedIOException("Unable to read " + keyResource.getFilename() + " as ISO-LATIN-1 PEM text", e);
     }
-  }
-
-  private String fromPemResource(final String name) {
-    final var thisClass = this.getClass();
-    final var stream = thisClass.getResourceAsStream(name);
-    return new BufferedReader(
-        new InputStreamReader(
-            stream, StandardCharsets.ISO_8859_1))
-        .lines()
-        .collect(Collectors.joining(System.lineSeparator()));
   }
 }
