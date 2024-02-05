@@ -4,11 +4,13 @@
 
 package com.alliander.osgp.kafka.message.signing;
 
+import static com.alliander.osgp.kafka.message.signing.MessageSigner.RECORD_HEADER_KEY_SIGNATURE;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.alliander.osgp.kafka.message.wrapper.SignableMessageWrapper;
 import java.io.BufferedReader;
-import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
@@ -16,13 +18,16 @@ import java.security.KeyPair;
 import java.security.SecureRandom;
 import java.util.Random;
 import java.util.stream.Collectors;
+import org.apache.avro.Schema;
+import org.apache.avro.specific.SpecificRecordBase;
+import org.apache.kafka.clients.producer.ProducerRecord;
 import org.junit.jupiter.api.Test;
 
 class MessageSignerTest {
 
   private static final boolean SIGNING_ENABLED = true;
 
-  private static final boolean STRIP_HEADERS = true;
+  private static final boolean STRIP_AVRO_HEADER = true;
 
   private static final String SIGNATURE_ALGORITHM = "SHA256withRSA";
   private static final String SIGNATURE_PROVIDER = "SunRsaSign";
@@ -39,7 +44,7 @@ class MessageSignerTest {
   private final MessageSigner messageSigner =
       MessageSigner.newBuilder()
           .signingEnabled(SIGNING_ENABLED)
-          .stripHeaders(STRIP_HEADERS)
+          .stripAvroHeader(STRIP_AVRO_HEADER)
           .signatureAlgorithm(SIGNATURE_ALGORITHM)
           .signatureProvider(SIGNATURE_PROVIDER)
           .signatureKeyAlgorithm(SIGNATURE_KEY_ALGORITHM)
@@ -57,14 +62,42 @@ class MessageSignerTest {
   }
 
   @Test
+  void signsRecordHeaderWithoutSignature() {
+    final ProducerRecord<String, Message> record = this.producerRecord();
+
+    this.messageSigner.sign(record);
+
+    assertThat(record.headers().lastHeader(RECORD_HEADER_KEY_SIGNATURE)).isNotNull();
+  }
+
+  @Test
   void signsMessageReplacingSignature() {
     final byte[] randomSignature = this.randomSignature();
     final TestableWrapper messageWrapper = this.messageWrapper();
+    messageWrapper.setSignature(ByteBuffer.wrap(randomSignature));
+
+    final byte[] actualSignatureBefore = this.bytes(messageWrapper.getSignature());
+    assertThat(actualSignatureBefore).isNotNull().isEqualTo(randomSignature);
 
     this.messageSigner.sign(messageWrapper);
 
-    final byte[] actualSignature = this.bytes(messageWrapper.getSignature());
-    assertThat(actualSignature).isNotNull().isNotEqualTo(randomSignature);
+    final byte[] actualSignatureAfter = this.bytes(messageWrapper.getSignature());
+    assertThat(actualSignatureAfter).isNotNull().isNotEqualTo(randomSignature);
+  }
+
+  @Test
+  void signsRecordHeaderReplacingSignature() {
+    final byte[] randomSignature = this.randomSignature();
+    final ProducerRecord<String, Message> record = this.producerRecord();
+    record.headers().add(RECORD_HEADER_KEY_SIGNATURE, randomSignature);
+
+    final byte[] actualSignatureBefore = record.headers().lastHeader(RECORD_HEADER_KEY_SIGNATURE).value();
+    assertThat(actualSignatureBefore).isNotNull().isEqualTo(randomSignature);
+
+    this.messageSigner.sign(record);
+
+    final byte[] actualSignatureAfter = record.headers().lastHeader(RECORD_HEADER_KEY_SIGNATURE).value();
+    assertThat(actualSignatureAfter).isNotNull().isNotEqualTo(randomSignature);
   }
 
   @Test
@@ -77,12 +110,34 @@ class MessageSignerTest {
   }
 
   @Test
+  void verifiesRecordsWithValidSignature() {
+    final ProducerRecord<String, Message> producerRecord = this.properlySignedRecord();
+
+    final boolean signatureWasVerified = this.messageSigner.verify(producerRecord);
+
+    assertThat(signatureWasVerified).isTrue();
+  }
+
+  @Test
   void doesNotVerifyMessagesWithoutSignature() {
     final TestableWrapper messageWrapper = this.messageWrapper();
 
     final boolean signatureWasVerified = this.messageSigner.verify(messageWrapper);
 
     assertThat(signatureWasVerified).isFalse();
+  }
+
+  @Test
+  void doesNotVerifyRecordsWithoutSignature() {
+    final ProducerRecord<String, Message> producerRecord = this.producerRecord();
+    final String expectedMessage = "This ProducerRecord does not contain a signature header";
+
+    final Exception exception = assertThrows(IllegalStateException.class, () ->
+      this.messageSigner.verify(producerRecord)
+    );
+    final String actualMessage = exception.getMessage();
+
+    assertTrue(actualMessage.contains(expectedMessage));
   }
 
   @Test
@@ -142,6 +197,27 @@ class MessageSignerTest {
   }
 
   @Test
+  void recordHeaderSigningWorksWithKeysFromPemEncodedResources() {
+
+    final MessageSigner messageSignerWithKeysFromResources =
+        MessageSigner.newBuilder()
+            .signingEnabled(SIGNING_ENABLED)
+            .signatureAlgorithm(SIGNATURE_ALGORITHM)
+            .signatureProvider(SIGNATURE_PROVIDER)
+            .signatureKeyAlgorithm(SIGNATURE_KEY_ALGORITHM)
+            .signatureKeySize(SIGNATURE_KEY_SIZE)
+            .signingKey(this.fromPemResource("/rsa-private.pem"))
+            .verificationKey(this.fromPemResource("/rsa-public.pem"))
+            .build();
+
+    final ProducerRecord<String, Message> producerRecord = this.producerRecord();
+    messageSignerWithKeysFromResources.sign(producerRecord);
+    final boolean signatureWasVerified = messageSignerWithKeysFromResources.verify(producerRecord);
+
+    assertThat(signatureWasVerified).isTrue();
+  }
+
+  @Test
   void signingCanBeDisabled() {
     final MessageSigner messageSignerSigningDisabled =
         MessageSigner.newBuilder().signingEnabled(!SIGNING_ENABLED).build();
@@ -166,6 +242,12 @@ class MessageSignerTest {
     return messageWrapper;
   }
 
+  private ProducerRecord<String, Message> properlySignedRecord() {
+    final ProducerRecord<String, Message> producerRecord = this.producerRecord();
+    this.messageSigner.sign(producerRecord);
+    return producerRecord;
+  }
+
   private byte[] randomSignature() {
     final byte[] signature = new byte[SIGNATURE_KEY_SIZE_BYTES];
     RANDOM.nextBytes(signature);
@@ -181,6 +263,38 @@ class MessageSignerTest {
     return bytes;
   }
 
+  private ProducerRecord<String, Message> producerRecord() {
+    final Message message = new Message("super special message");
+
+    return new ProducerRecord<>("topic", message);
+  }
+
+  static class Message extends SpecificRecordBase {
+    private String message;
+
+    public Message() {
+    }
+
+    Message(final String message) {
+      this.message = message;
+    }
+
+    @Override
+    public Schema getSchema() {
+      return new org.apache.avro.Schema.Parser().parse("{\"type\":\"record\",\"name\":\"Message\",\"namespace\":\"com.alliander.osgp.kafka.message.signing\",\"fields\":[{\"name\":\"message\",\"type\":{\"type\":\"string\",\"avro.java.string\":\"String\"}}]}");
+    }
+
+    @Override
+    public Object get(final int field) {
+      return this.message;
+    }
+
+    @Override
+    public void put(final int field, final Object value) {
+      this.message = value != null ? value.toString() : null;
+    }
+  }
+
   private static class TestableWrapper extends SignableMessageWrapper<String> {
     private ByteBuffer signature;
 
@@ -189,7 +303,7 @@ class MessageSignerTest {
     }
 
     @Override
-    public ByteBuffer toByteBuffer() throws IOException {
+    public ByteBuffer toByteBuffer() {
       return ByteBuffer.wrap(this.message.getBytes(StandardCharsets.UTF_8));
     }
 

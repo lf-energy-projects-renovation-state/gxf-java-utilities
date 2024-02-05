@@ -26,6 +26,28 @@ new DefaultKafkaConsumerFactory(
 )
 ```
 
+## kafka-message-signing
+Library for signing Kafka messages and for verification of signed Kafka messages.
+
+Two variations are supported:
+- The signature is set on the message, via `SignableMessageWrapper`'s `signature` field;
+- The signature is set as a `signature` header on the Kafka `ProducerRecord`.
+
+The `MessageSigner` class is used for both signing and verifying a signature.
+
+To sign a message, use `MessageSigner`'s `sign()` method: choose between `SignableMessageWrapper` or `ProducerRecord`.
+
+To verify a signature, use `MessageSigner`'s `verify()` method: choose between `SignableMessageWrapper` or `ProducerRecord`.
+
+The `MessageSigner` class can be created with the following configuration options:
+- signingEnabled
+- stripAvroHeader
+- signatureAlgorithm
+- signatureProvider
+- signatureKeyAlgorithm
+- signatureKeySize
+- signingKey: from `java.security.PrivateKey` object, from a byte array or from a pem file
+- verificationKey: `from java.security.PrivateKey` object, from a byte array or from a pem file
 
 ## oauth-token-client
 Library that easily configures the [msal4j](https://github.com/AzureAD/microsoft-authentication-library-for-java) oauth token provider. 
