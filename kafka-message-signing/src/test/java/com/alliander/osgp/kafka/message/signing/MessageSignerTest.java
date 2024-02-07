@@ -112,9 +112,9 @@ class MessageSignerTest {
 
   @Test
   void verifiesRecordsWithValidSignature() {
-    final ConsumerRecord<String, Message> producerRecord = this.properlySignedRecord();
+    final ConsumerRecord<String, Message> signedRecord = this.properlySignedRecord();
 
-    final boolean signatureWasVerified = this.messageSigner.verify(producerRecord);
+    final boolean signatureWasVerified = this.messageSigner.verify(signedRecord);
 
     assertThat(signatureWasVerified).isTrue();
   }
@@ -251,7 +251,9 @@ class MessageSignerTest {
   }
 
   private <K, V> ConsumerRecord<K, V> producerRecordToConsumerRecord(final ProducerRecord<K, V> producerRecord) {
-    return new ConsumerRecord<>(producerRecord.topic(), producerRecord.partition(), 123L, producerRecord.key(), producerRecord.value());
+    final ConsumerRecord<K, V> consumerRecord = new ConsumerRecord<>(producerRecord.topic(), 0, 123L, producerRecord.key(), producerRecord.value());
+    producerRecord.headers().forEach(header -> consumerRecord.headers().add(header));
+    return consumerRecord;
   }
 
   private byte[] randomSignature() {
