@@ -27,6 +27,7 @@ import java.util.Optional;
 import java.util.regex.Pattern;
 import org.apache.avro.message.BinaryMessageEncoder;
 import org.apache.avro.specific.SpecificRecordBase;
+import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.header.Header;
 
@@ -250,10 +251,10 @@ public class MessageSigner {
   }
 
   /**
-   * Verifies the signature of the provided {@code producerRecord}.
+   * Verifies the signature of the provided {@code consumerRecord}.
    *
-   * @param producerRecord the record to be verified
-   * @return {@code true} if the signature of the given {@code producerRecord} was verified; {@code false}
+   * @param consumerRecord the record to be verified
+   * @return {@code true} if the signature of the given {@code consumerRecord} was verified; {@code false}
    *     if not.
    * @throws IllegalStateException if this message signer has a private key needed for signing
    *     messages, but does not have the public key for signature verification.
@@ -261,13 +262,13 @@ public class MessageSigner {
    * @throws UncheckedSecurityException if the signature verification process throws a
    *     SignatureException.
    */
-  public boolean verify(final ProducerRecord<String, ? extends SpecificRecordBase> producerRecord) {
+  public boolean verify(final ConsumerRecord<String, ? extends SpecificRecordBase> consumerRecord) {
     if (!this.canVerifyMessageSignatures()) {
       throw new IllegalStateException(
           "This MessageSigner is not configured for verification, it can only be used for signing");
     }
 
-    final Header header = producerRecord.headers().lastHeader(RECORD_HEADER_KEY_SIGNATURE);
+    final Header header = consumerRecord.headers().lastHeader(RECORD_HEADER_KEY_SIGNATURE);
     if(header == null) {
       throw new IllegalStateException(
           "This ProducerRecord does not contain a signature header");
@@ -278,9 +279,9 @@ public class MessageSigner {
     }
 
     try {
-      producerRecord.headers().remove(RECORD_HEADER_KEY_SIGNATURE);
+      consumerRecord.headers().remove(RECORD_HEADER_KEY_SIGNATURE);
       synchronized (this.verificationSignature) {
-        final SpecificRecordBase specificRecordBase = producerRecord.value();
+        final SpecificRecordBase specificRecordBase = consumerRecord.value();
         return this.verifySignatureBytes(signatureBytes, this.toByteBuffer(specificRecordBase));
       }
     } catch (final SignatureException e) {
