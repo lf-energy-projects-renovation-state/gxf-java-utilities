@@ -20,6 +20,7 @@ import java.util.Random;
 import java.util.stream.Collectors;
 import org.apache.avro.Schema;
 import org.apache.avro.specific.SpecificRecordBase;
+import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.junit.jupiter.api.Test;
 
@@ -111,9 +112,9 @@ class MessageSignerTest {
 
   @Test
   void verifiesRecordsWithValidSignature() {
-    final ProducerRecord<String, Message> producerRecord = this.properlySignedRecord();
+    final ConsumerRecord<String, Message> signedRecord = this.properlySignedRecord();
 
-    final boolean signatureWasVerified = this.messageSigner.verify(producerRecord);
+    final boolean signatureWasVerified = this.messageSigner.verify(signedRecord);
 
     assertThat(signatureWasVerified).isTrue();
   }
@@ -129,11 +130,11 @@ class MessageSignerTest {
 
   @Test
   void doesNotVerifyRecordsWithoutSignature() {
-    final ProducerRecord<String, Message> producerRecord = this.producerRecord();
     final String expectedMessage = "This ProducerRecord does not contain a signature header";
+    final ConsumerRecord<String, Message> consumerRecord = this.consumerRecord();
 
     final Exception exception = assertThrows(IllegalStateException.class, () ->
-      this.messageSigner.verify(producerRecord)
+      this.messageSigner.verify(consumerRecord)
     );
     final String actualMessage = exception.getMessage();
 
@@ -212,7 +213,8 @@ class MessageSignerTest {
 
     final ProducerRecord<String, Message> producerRecord = this.producerRecord();
     messageSignerWithKeysFromResources.sign(producerRecord);
-    final boolean signatureWasVerified = messageSignerWithKeysFromResources.verify(producerRecord);
+    final ConsumerRecord<String, Message> consumerRecord = this.producerRecordToConsumerRecord(producerRecord);
+    final boolean signatureWasVerified = messageSignerWithKeysFromResources.verify(consumerRecord);
 
     assertThat(signatureWasVerified).isTrue();
   }
@@ -242,10 +244,16 @@ class MessageSignerTest {
     return messageWrapper;
   }
 
-  private ProducerRecord<String, Message> properlySignedRecord() {
+  private ConsumerRecord<String, Message> properlySignedRecord() {
     final ProducerRecord<String, Message> producerRecord = this.producerRecord();
     this.messageSigner.sign(producerRecord);
-    return producerRecord;
+    return this.producerRecordToConsumerRecord(producerRecord);
+  }
+
+  private <K, V> ConsumerRecord<K, V> producerRecordToConsumerRecord(final ProducerRecord<K, V> producerRecord) {
+    final ConsumerRecord<K, V> consumerRecord = new ConsumerRecord<>(producerRecord.topic(), 0, 123L, producerRecord.key(), producerRecord.value());
+    producerRecord.headers().forEach(header -> consumerRecord.headers().add(header));
+    return consumerRecord;
   }
 
   private byte[] randomSignature() {
@@ -264,9 +272,15 @@ class MessageSignerTest {
   }
 
   private ProducerRecord<String, Message> producerRecord() {
-    final Message message = new Message("super special message");
+    return new ProducerRecord<>("topic", this.message());
+  }
 
-    return new ProducerRecord<>("topic", message);
+  private ConsumerRecord<String, Message> consumerRecord() {
+    return new ConsumerRecord<>("topic", 0, 123L, null, this.message());
+  }
+
+  private Message message() {
+    return new Message("super special message");
   }
 
   static class Message extends SpecificRecordBase {
