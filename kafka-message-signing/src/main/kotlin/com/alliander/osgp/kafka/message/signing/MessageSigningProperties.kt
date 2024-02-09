@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: Copyright Contributors to the GXF project
+//
+// SPDX-License-Identifier: Apache-2.0
+
 package com.alliander.osgp.kafka.message.signing
 
 import java.security.PrivateKey
