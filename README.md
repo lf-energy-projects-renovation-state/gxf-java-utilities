@@ -39,7 +39,7 @@ To sign a message, use `MessageSigner`'s `sign()` method: choose between `Signab
 
 To verify a signature, use `MessageSigner`'s `verify()` method: choose between `SignableMessageWrapper` or `ProducerRecord`.
 
-The `MessageSigner` class can be created with the following configuration options:
+The `MessageSigner` class can be created using `MessageSigner.newBuilder()` with the following configuration options:
 - signingEnabled
 - stripAvroHeader
 - signatureAlgorithm
@@ -48,6 +48,24 @@ The `MessageSigner` class can be created with the following configuration option
 - signatureKeySize
 - signingKey: from `java.security.PrivateKey` object, from a byte array or from a pem file
 - verificationKey: `from java.security.PrivateKey` object, from a byte array or from a pem file
+
+### Spring Auto Configuration
+You can configure the settings in your `application.yaml` (or properties), for example:
+```yaml
+message-signing:
+  enabled: true
+  strip-headers: true
+  signature:
+    algorithm: SHA256withRSA
+    provider: SunRsaSign
+    key:
+      algorithm: RSA
+      size: 2048
+```
+
+### Custom or multiple certificates configuration
+You can create your own `MessageSigningProperties` object and use `MessageSigner.newMessageSigner(props)`.
+Spring Boot users can extend the `MessageSigningProperties` to add @ConfigurationProperties capabilities and/or to support multiple configurations
 
 ## oauth-token-client
 Library that easily configures the [msal4j](https://github.com/AzureAD/microsoft-authentication-library-for-java) oauth token provider. 
