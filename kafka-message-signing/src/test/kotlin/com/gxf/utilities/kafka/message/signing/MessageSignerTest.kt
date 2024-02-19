@@ -4,7 +4,6 @@
 
 package com.gxf.utilities.kafka.message.signing
 
-import com.gxf.utilities.kafka.message.signing.MessageSigner.Companion.generateKeyPair
 import com.gxf.utilities.kafka.message.signing.MessageSigner.Companion.newBuilder
 import com.gxf.utilities.kafka.message.wrapper.SignableMessageWrapper
 import org.apache.avro.Schema
@@ -14,14 +13,12 @@ import org.apache.kafka.clients.producer.ProducerRecord
 import org.apache.kafka.common.header.Header
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
-import java.io.BufferedReader
-import java.io.InputStreamReader
+import org.springframework.core.io.ClassPathResource
 import java.nio.ByteBuffer
 import java.nio.charset.StandardCharsets
 import java.security.SecureRandom
 import java.util.*
 import java.util.function.Consumer
-import java.util.stream.Collectors
 
 class MessageSignerTest {
 
@@ -34,10 +31,6 @@ class MessageSignerTest {
     private val signatureKeySize = 2048
     private val signatureKeySizeBytes = signatureKeySize / 8
 
-    private val keyPair = generateKeyPair(
-        signatureKeyAlgorithm, signatureProvider, signatureKeySize
-    )
-
     private val random: Random = SecureRandom()
 
     private val messageSigner = newBuilder()
@@ -47,7 +40,8 @@ class MessageSignerTest {
         .signatureProvider(signatureProvider)
         .signatureKeyAlgorithm(signatureKeyAlgorithm)
         .signatureKeySize(signatureKeySize)
-        .keyPair(keyPair)
+        .privateKeyFile(ClassPathResource("/rsa-private.pem"))
+        .publicKeyFile(ClassPathResource("/rsa-public.pem"))
         .build()
 
     @Test
@@ -169,16 +163,6 @@ class MessageSignerTest {
         assertThat(verifiedSignature.remaining()).isEqualTo(originalRemaining)
     }
 
-    private fun fromPemResource(name: String): String {
-        return BufferedReader(
-            InputStreamReader(
-                this.javaClass.getResourceAsStream(name), StandardCharsets.ISO_8859_1
-            )
-        )
-            .lines()
-            .collect(Collectors.joining(System.lineSeparator()))
-    }
-
     @Test
     fun worksWithKeysFromPemEncodedResources() {
         val messageSignerWithKeysFromResources =
@@ -188,8 +172,8 @@ class MessageSignerTest {
                 .signatureProvider(signatureProvider)
                 .signatureKeyAlgorithm(signatureKeyAlgorithm)
                 .signatureKeySize(signatureKeySize)
-                .signingKey(this.fromPemResource("/rsa-private.pem"))
-                .verificationKey(this.fromPemResource("/rsa-public.pem"))
+                .privateKeyFile(ClassPathResource("/rsa-private.pem"))
+                .publicKeyFile(ClassPathResource("/rsa-public.pem"))
                 .build()
 
         val messageWrapper = this.messageWrapper()
@@ -208,8 +192,8 @@ class MessageSignerTest {
                 .signatureProvider(signatureProvider)
                 .signatureKeyAlgorithm(signatureKeyAlgorithm)
                 .signatureKeySize(signatureKeySize)
-                .signingKey(this.fromPemResource("/rsa-private.pem"))
-                .verificationKey(this.fromPemResource("/rsa-public.pem"))
+                .privateKeyFile(ClassPathResource("/rsa-private.pem"))
+                .publicKeyFile(ClassPathResource("/rsa-public.pem"))
                 .build()
 
         val producerRecord = this.producerRecord()
@@ -287,14 +271,7 @@ class MessageSignerTest {
         return Message("super special message")
     }
 
-    internal class Message : SpecificRecordBase {
-        private var message: String? = null
-
-        constructor()
-
-        constructor(message: String?) {
-            this.message = message
-        }
+    internal class Message(private var message: String?) : SpecificRecordBase() {
 
         override fun getSchema(): Schema {
             return Schema.Parser()

@@ -10,12 +10,14 @@ import org.apache.avro.specific.SpecificRecordBase
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.apache.kafka.clients.producer.ProducerRecord
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
+import org.springframework.boot.ssl.pem.PemContent
+import org.springframework.core.io.Resource
 import org.springframework.stereotype.Component
 import java.io.IOException
 import java.io.UncheckedIOException
 import java.nio.ByteBuffer
+import java.nio.charset.StandardCharsets
 import java.security.*
-import java.security.spec.PKCS8EncodedKeySpec
 import java.security.spec.X509EncodedKeySpec
 import java.util.*
 import java.util.regex.Pattern
@@ -25,51 +27,24 @@ import java.util.regex.Pattern
 @ConditionalOnMissingBean(MessageSigner::class)
 class MessageSigner(properties: MessageSigningProperties) {
 
-    private var signingEnabled = false
+    private val signingEnabled: Boolean = properties.signingEnabled
+    private val stripAvroHeader: Boolean = properties.stripAvroHeader
 
-    private var stripAvroHeader = false
+    private val signatureAlgorithm: String = properties.algorithm
+    private val signatureProvider: String? = determineProvider(properties)
+    private val signatureKeyAlgorithm: String = properties.keyAlgorithm
+    private val signatureKeySize: Int = properties.keySize
 
-    private var signatureAlgorithm: String? = null
-    private var signatureProvider: String? = null
-    private var signatureKeyAlgorithm: String? = null
-    private var signatureKeySize = 0
+    private var signingKey: PrivateKey? = readPrivateKey(properties.privateKeyFile)
+    private var verificationKey: PublicKey? = readPublicKey(properties.keyAlgorithm, properties.publicKeyFile)
 
-    private var signingSignature: Signature? = null
-    private var verificationSignature: Signature? = null
-
-    private var signingKey: PrivateKey? = null
-    private var verificationKey: PublicKey? = null
+    private val signingSignature: Signature? = signatureInstance(properties.algorithm, signatureProvider, signingKey)
+    private val verificationSignature: Signature? =
+        signatureInstance(properties.algorithm, signatureProvider, verificationKey)
 
     init {
-        this.signingEnabled = properties.signingEnabled
         if (this.signingEnabled) {
-            this.signingSignature =
-                signatureInstance(
-                    properties.algorithm, properties.provider, properties.privateKey
-                )
-            this.verificationSignature =
-                signatureInstance(
-                    properties.algorithm, properties.provider, properties.publicKey
-                )
-            this.signingEnabled = properties.signingEnabled
-            this.stripAvroHeader = properties.stripHeaders
-            this.signatureAlgorithm = properties.algorithm
-            this.signatureKeyAlgorithm = properties.keyAlgorithm
-            this.signatureKeySize = properties.keySize
-            require(!(properties.privateKey == null && properties.publicKey == null)) { "A signing key (PrivateKey) or verification key (PublicKey) must be provided" }
-            this.signingKey = properties.privateKey
-            this.verificationKey = properties.publicKey
-            when {
-                properties.provider != null -> this.signatureProvider = properties.provider
-                this.signingSignature != null -> this.signatureProvider = signingSignature?.getProvider()?.name
-                this.verificationSignature != null -> this.signatureProvider =
-                    verificationSignature?.getProvider()?.name
-
-                else -> {
-                    // Should not happen, set to null and ignore.
-                    this.signatureProvider = null
-                }
-            }
+            require(!(signingKey == null && verificationKey == null)) { "A signing key (PrivateKey) or verification key (PublicKey) must be provided" }
         }
     }
 
@@ -139,8 +114,8 @@ class MessageSigner(properties: MessageSigningProperties) {
                 } else {
                     this.toByteBuffer(message)!!.array()
                 }
-                signingSignature!!.update(messageBytes)
-                return signingSignature!!.sign()
+                signingSignature.update(messageBytes)
+                return signingSignature.sign()
             }
         } catch (e: SignatureException) {
             throw UncheckedSecurityException("Unable to sign message", e)
@@ -175,8 +150,8 @@ class MessageSigner(properties: MessageSigningProperties) {
                 } else {
                     this.toByteBuffer(specificRecordBase).array()
                 }
-                signingSignature!!.update(messageBytes)
-                return signingSignature!!.sign()
+                signingSignature.update(messageBytes)
+                return signingSignature.sign()
             }
         } catch (e: SignatureException) {
             throw UncheckedSecurityException("Unable to sign message", e)
@@ -250,7 +225,7 @@ class MessageSigner(properties: MessageSigningProperties) {
 
         try {
             consumerRecord.headers().remove(RECORD_HEADER_KEY_SIGNATURE)
-            synchronized((verificationSignature)!!) {
+            synchronized(verificationSignature!!) {
                 val specificRecordBase: SpecificRecordBase = consumerRecord.value()
                 return this.verifySignatureBytes(
                     signatureBytes,
@@ -270,7 +245,7 @@ class MessageSigner(properties: MessageSigningProperties) {
             messageByteBuffer!!.array()
         }
         verificationSignature!!.update(messageBytes)
-        return verificationSignature!!.verify(signatureBytes)
+        return verificationSignature.verify(signatureBytes)
     }
 
     private fun hasAvroHeader(bytes: ByteArray): Boolean {
@@ -335,6 +310,16 @@ class MessageSigner(properties: MessageSigningProperties) {
                 + "-----END $label-----" + "\r\n")
     }
 
+    private fun determineProvider(properties: MessageSigningProperties): String? {
+        return when {
+            properties.provider != null -> properties.provider
+            this.signingSignature != null -> signingSignature.getProvider()?.name
+            this.verificationSignature != null -> verificationSignature.getProvider()?.name
+            // Should not happen, set to null and ignore.
+            else -> null
+        }
+    }
+
     override fun toString(): String {
         return String.format(
             "MessageSigner[algorithm=\"%s\"-\"%s\", provider=\"%s\", keySize=%d, sign=%b, verify=%b]",
@@ -368,6 +353,8 @@ class MessageSigner(properties: MessageSigningProperties) {
         const val DEFAULT_SIGNATURE_KEY_SIZE: Int = 2048
 
         const val RECORD_HEADER_KEY_SIGNATURE: String = "signature"
+
+        private val PEM_REMOVAL_PATTERN: Pattern = Pattern.compile("-----(?:BEGIN|END) .*?-----|\\r|\\n")
 
         @JvmStatic
         private fun signatureInstance(
@@ -419,138 +406,57 @@ class MessageSigner(properties: MessageSigningProperties) {
             }
         }
 
-        @JvmStatic
-        fun generateKeyPair(
-            signatureKeyAlgorithm: String?,
-            signatureProvider: String?,
-            signatureKeySize: Int
-        ): KeyPair {
-            val keyPairGenerator: KeyPairGenerator = try {
-                if (signatureProvider == null) {
-                    KeyPairGenerator.getInstance(signatureKeyAlgorithm)
-                } else {
-                    KeyPairGenerator.getInstance(signatureKeyAlgorithm, signatureProvider)
-                }
+        fun readPrivateKey(privateKeyFile: Resource?): PrivateKey? {
+            if (privateKeyFile == null) {
+                return null
+            }
+            try {
+                val content = privateKeyFile.getContentAsString(StandardCharsets.ISO_8859_1)
+                return PemContent.of(content).privateKey
+            } catch (e: IOException) {
+                throw UncheckedIOException("Unable to read ${privateKeyFile.filename} as ISO-LATIN-1 PEM text", e)
+            }
+        }
+
+        private fun readPublicKey(keyAlgorithm: String, publicKeyFile: Resource?): PublicKey? {
+            if (publicKeyFile == null) {
+                return null
+            }
+            val content = publicKeyFile.getContentAsString(StandardCharsets.ISO_8859_1)
+            val base64 = PEM_REMOVAL_PATTERN.matcher(content).replaceAll("")
+            val bytes = Base64.getDecoder().decode(base64)
+            val keySpec = X509EncodedKeySpec(bytes)
+            return try {
+                KeyFactory.getInstance(keyAlgorithm).generatePublic(keySpec)
             } catch (e: GeneralSecurityException) {
                 throw UncheckedSecurityException(cause = e)
             }
-            keyPairGenerator.initialize(signatureKeySize)
-            return keyPairGenerator.generateKeyPair()
         }
 
         @JvmStatic
         fun newBuilder(): Builder {
             return Builder()
         }
-
-        @JvmStatic
-        fun newMessageSigner(messageSigningProperties: MessageSigningProperties): MessageSigner {
-            return Builder(messageSigningProperties).build()
-        }
     }
 
-    class Builder {
-        private val properties: MessageSigningProperties
+    class Builder : MessageSigningProperties() {
+        fun signingEnabled(signingEnabled: Boolean) = this.apply { this.signingEnabled = signingEnabled }
 
-        internal constructor() {
-            this.properties = MessageSigningProperties()
-        }
+        fun stripAvroHeader(stripAvroHeader: Boolean) = this.apply { this.stripAvroHeader = stripAvroHeader }
 
-        constructor(properties: MessageSigningProperties) {
-            this.properties = properties
-        }
+        fun signatureAlgorithm(signatureAlgorithm: String) = this.apply { this.algorithm = signatureAlgorithm }
 
-        fun signingEnabled(signingEnabled: Boolean): Builder = this.apply { properties.signingEnabled = signingEnabled }
+        fun signatureProvider(signatureProvider: String?) = this.apply { this.provider = signatureProvider }
 
-        fun stripAvroHeader(stripAvroHeader: Boolean): Builder =
-            this.apply { properties.stripHeaders = stripAvroHeader }
+        fun signatureKeyAlgorithm(signatureKeyAlgorithm: String) =
+            this.apply { this.keyAlgorithm = signatureKeyAlgorithm }
 
-        fun signatureAlgorithm(signatureAlgorithm: String): Builder =
-            this.apply { properties.algorithm = signatureAlgorithm }
+        fun signatureKeySize(signatureKeySize: Int) = this.apply { this.keySize = signatureKeySize }
 
-        fun signatureProvider(signatureProvider: String?): Builder =
-            this.apply { properties.provider = signatureProvider }
+        fun privateKeyFile(privateKeyFile: Resource?) = this.apply { this.privateKeyFile = privateKeyFile }
 
-        fun signatureKeyAlgorithm(signatureKeyAlgorithm: String): Builder =
-            this.apply { properties.keyAlgorithm = signatureKeyAlgorithm }
+        fun publicKeyFile(publicKeyFile: Resource?) = this.apply { this.publicKeyFile = publicKeyFile }
 
-        fun signatureKeySize(signatureKeySize: Int): Builder =
-            this.apply { properties.keySize = signatureKeySize }
-
-        fun signingKey(signingKey: PrivateKey?): Builder = this.apply { properties.privateKey = signingKey }
-
-        fun signingKey(signingKeyPem: String?): Builder {
-            if (signingKeyPem == null) {
-                properties.privateKey = null
-                return this
-            }
-            val base64 = PEM_REMOVAL_PATTERN.matcher(signingKeyPem).replaceAll("")
-            val bytes = Base64.getDecoder().decode(base64)
-            return this.signingKey(bytes)
-        }
-
-        fun signingKey(signingKeyBytes: ByteArray?): Builder {
-            if (signingKeyBytes == null) {
-                properties.privateKey = null
-                return this
-            }
-            val keySpec = PKCS8EncodedKeySpec(signingKeyBytes)
-            try {
-                properties.privateKey =
-                    KeyFactory.getInstance(properties.keyAlgorithm).generatePrivate(keySpec)
-            } catch (e: GeneralSecurityException) {
-                throw UncheckedSecurityException(cause = e)
-            }
-            return this
-        }
-
-        fun verificationKey(verificationKey: PublicKey?): Builder =
-            this.apply { properties.publicKey = verificationKey }
-
-        fun verificationKey(verificationKeyPem: String?): Builder {
-            if (verificationKeyPem == null) {
-                properties.publicKey = null
-                return this
-            }
-            val base64 = PEM_REMOVAL_PATTERN.matcher(verificationKeyPem).replaceAll("")
-            val bytes = Base64.getDecoder().decode(base64)
-            return this.verificationKey(bytes)
-        }
-
-        fun verificationKey(verificationKeyBytes: ByteArray?): Builder {
-            if (verificationKeyBytes == null) {
-                properties.publicKey = null
-                return this
-            }
-            val keySpec = X509EncodedKeySpec(verificationKeyBytes)
-            try {
-                properties.publicKey =
-                    KeyFactory.getInstance(properties.keyAlgorithm).generatePublic(keySpec)
-            } catch (e: GeneralSecurityException) {
-                throw UncheckedSecurityException(cause = e)
-            }
-            return this
-        }
-
-        fun keyPair(keyPair: KeyPair): Builder = this.apply {
-            properties.privateKey = keyPair.private
-            properties.publicKey = keyPair.public
-        }
-
-        fun generateKeyPair(): Builder {
-            return this.keyPair(
-                generateKeyPair(
-                    properties.keyAlgorithm,
-                    properties.provider,
-                    properties.keySize
-                )
-            )
-        }
-
-        fun build(): MessageSigner = MessageSigner(this.properties)
-
-        companion object {
-            private val PEM_REMOVAL_PATTERN: Pattern = Pattern.compile("-----(?:BEGIN|END) .*?-----|\\r|\\n")
-        }
+        fun build(): MessageSigner = MessageSigner(this)
     }
 }
