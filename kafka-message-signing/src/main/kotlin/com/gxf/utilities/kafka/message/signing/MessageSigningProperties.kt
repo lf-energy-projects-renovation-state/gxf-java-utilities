@@ -11,14 +11,20 @@ import org.springframework.core.io.Resource
 @ConfigurationProperties(prefix = "message-signing")
 // Only instantiate when no other bean has been configured
 @ConditionalOnMissingBean(MessageSigningProperties::class)
-open class MessageSigningProperties {
-    var signingEnabled: Boolean = false
-    var stripAvroHeader: Boolean = false
+open class MessageSigningProperties(
+    /** Enable or disable signing */
+    var signingEnabled: Boolean = false,
+    /* Strip the Avro header containing the schema fingerprint */
+    var stripAvroHeader: Boolean = false,
 
-    var algorithm: String = MessageSigner.DEFAULT_SIGNATURE_ALGORITHM
-    var provider: String? = MessageSigner.DEFAULT_SIGNATURE_PROVIDER
-    var keyAlgorithm: String = MessageSigner.DEFAULT_SIGNATURE_KEY_ALGORITHM
-    var keySize: Int = MessageSigner.DEFAULT_SIGNATURE_KEY_SIZE
-    var privateKeyFile: Resource? = null
+    /** Signing algorithm */
+    var algorithm: String = MessageSigner.DEFAULT_SIGNATURE_ALGORITHM,
+    /** Signing algorithm provider */
+    var provider: String? = MessageSigner.DEFAULT_SIGNATURE_PROVIDER,
+    /** Private key algorithm */
+    var keyAlgorithm: String = MessageSigner.DEFAULT_SIGNATURE_KEY_ALGORITHM,
+    /** PEM file containing the private key */
+    var privateKeyFile: Resource? = null,
+    /** PEM file containing the public key */
     var publicKeyFile: Resource? = null
-}
+)

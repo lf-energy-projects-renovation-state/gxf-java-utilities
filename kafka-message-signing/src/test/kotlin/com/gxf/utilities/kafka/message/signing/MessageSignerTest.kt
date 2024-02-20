@@ -4,7 +4,6 @@
 
 package com.gxf.utilities.kafka.message.signing
 
-import com.gxf.utilities.kafka.message.signing.MessageSigner.Companion.newBuilder
 import com.gxf.utilities.kafka.message.wrapper.SignableMessageWrapper
 import org.apache.avro.Schema
 import org.apache.avro.specific.SpecificRecordBase
@@ -22,32 +21,23 @@ import java.util.function.Consumer
 
 class MessageSignerTest {
 
-    private val signingEnabled = true
-    private val stripAvroHeader = true
+    private val messageSignerProperties = MessageSigningProperties(
+        signingEnabled = true,
+        stripAvroHeader = true,
+        algorithm = "SHA256withRSA",
+        provider = "SunRsaSign",
+        keyAlgorithm = "RSA",
+        privateKeyFile = ClassPathResource("/rsa-private.pem"),
+        publicKeyFile = ClassPathResource("/rsa-public.pem")
+    )
 
-    private val signatureAlgorithm = "SHA256withRSA"
-    private val signatureProvider = "SunRsaSign"
-    private val signatureKeyAlgorithm = "RSA"
-    private val signatureKeySize = 2048
-    private val signatureKeySizeBytes = signatureKeySize / 8
-
-    private val random: Random = SecureRandom()
-
-    private val messageSigner = newBuilder()
-        .signingEnabled(signingEnabled)
-        .stripAvroHeader(stripAvroHeader)
-        .signatureAlgorithm(signatureAlgorithm)
-        .signatureProvider(signatureProvider)
-        .signatureKeyAlgorithm(signatureKeyAlgorithm)
-        .signatureKeySize(signatureKeySize)
-        .privateKeyFile(ClassPathResource("/rsa-private.pem"))
-        .publicKeyFile(ClassPathResource("/rsa-public.pem"))
-        .build()
+    private val messageSigner = MessageSigner(messageSignerProperties)
 
     @Test
     fun signsMessageWithoutSignature() {
         val messageWrapper: SignableMessageWrapper<*> = this.messageWrapper()
 
+        println(messageSigner.toString())
         messageSigner.sign(messageWrapper)
 
         assertThat(messageWrapper.getSignature()).isNotNull()
@@ -164,50 +154,9 @@ class MessageSignerTest {
     }
 
     @Test
-    fun worksWithKeysFromPemEncodedResources() {
-        val messageSignerWithKeysFromResources =
-            newBuilder()
-                .signingEnabled(signingEnabled)
-                .signatureAlgorithm(signatureAlgorithm)
-                .signatureProvider(signatureProvider)
-                .signatureKeyAlgorithm(signatureKeyAlgorithm)
-                .signatureKeySize(signatureKeySize)
-                .privateKeyFile(ClassPathResource("/rsa-private.pem"))
-                .publicKeyFile(ClassPathResource("/rsa-public.pem"))
-                .build()
-
-        val messageWrapper = this.messageWrapper()
-        messageSignerWithKeysFromResources.sign(messageWrapper)
-        val signatureWasVerified = messageSignerWithKeysFromResources.verify(messageWrapper)
-
-        assertThat(signatureWasVerified).isTrue()
-    }
-
-    @Test
-    fun recordHeaderSigningWorksWithKeysFromPemEncodedResources() {
-        val messageSignerWithKeysFromResources =
-            newBuilder()
-                .signingEnabled(signingEnabled)
-                .signatureAlgorithm(signatureAlgorithm)
-                .signatureProvider(signatureProvider)
-                .signatureKeyAlgorithm(signatureKeyAlgorithm)
-                .signatureKeySize(signatureKeySize)
-                .privateKeyFile(ClassPathResource("/rsa-private.pem"))
-                .publicKeyFile(ClassPathResource("/rsa-public.pem"))
-                .build()
-
-        val producerRecord = this.producerRecord()
-        messageSignerWithKeysFromResources.sign(producerRecord)
-        val consumerRecord: ConsumerRecord<String, Message> = this.producerRecordToConsumerRecord(producerRecord)
-        val signatureWasVerified: Boolean = messageSignerWithKeysFromResources.verify(consumerRecord)
-
-        assertThat(signatureWasVerified).isTrue()
-    }
-
-    @Test
     fun signingCanBeDisabled() {
-        val messageSignerSigningDisabled =
-            newBuilder().signingEnabled(!signingEnabled).build()
+        val signingDisabledProperties = MessageSigningProperties(signingEnabled = false)
+        val messageSignerSigningDisabled = MessageSigner(signingDisabledProperties)
 
         assertThat(messageSignerSigningDisabled.canSignMessages()).isFalse()
         assertThat(messageSignerSigningDisabled.canVerifyMessageSignatures()).isFalse()
@@ -245,8 +194,12 @@ class MessageSignerTest {
     }
 
     private fun randomSignature(): ByteArray {
-        val signature = ByteArray(signatureKeySizeBytes)
+        val random: Random = SecureRandom()
+        val keySize = 2048
+
+        val signature = ByteArray(keySize / 8)
         random.nextBytes(signature)
+
         return signature
     }
 

@@ -33,7 +33,6 @@ class MessageSigner(properties: MessageSigningProperties) {
     private val signatureAlgorithm: String = properties.algorithm
     private val signatureProvider: String? = determineProvider(properties)
     private val signatureKeyAlgorithm: String = properties.keyAlgorithm
-    private val signatureKeySize: Int = properties.keySize
 
     private var signingKey: PrivateKey? = readPrivateKey(properties.privateKeyFile)
     private var verificationKey: PublicKey? = readPublicKey(properties.keyAlgorithm, properties.publicKeyFile)
@@ -322,25 +321,13 @@ class MessageSigner(properties: MessageSigningProperties) {
 
     override fun toString(): String {
         return String.format(
-            "MessageSigner[algorithm=\"%s\"-\"%s\", provider=\"%s\", keySize=%d, sign=%b, verify=%b]",
+            "MessageSigner[algorithm=\"%s\"-\"%s\", provider=\"%s\", sign=%b, verify=%b]",
             this.signatureAlgorithm,
             this.signatureKeyAlgorithm,
             this.signatureProvider,
-            this.signatureKeySize,
             this.canSignMessages(),
             this.canVerifyMessageSignatures()
         )
-    }
-
-    fun descriptionWithKeys(): String {
-        val sb = StringBuilder(this.toString())
-        signingKeyPem().ifPresent { key: String ->
-            sb.append(System.lineSeparator()).append(key)
-        }
-        verificationKeyPem().ifPresent { key: String ->
-            sb.append(System.lineSeparator()).append(key)
-        }
-        return sb.toString()
     }
 
     companion object {
@@ -350,7 +337,6 @@ class MessageSigner(properties: MessageSigningProperties) {
         const val DEFAULT_SIGNATURE_ALGORITHM: String = "SHA256withRSA"
         const val DEFAULT_SIGNATURE_PROVIDER: String = "SunRsaSign"
         const val DEFAULT_SIGNATURE_KEY_ALGORITHM: String = "RSA"
-        const val DEFAULT_SIGNATURE_KEY_SIZE: Int = 2048
 
         const val RECORD_HEADER_KEY_SIGNATURE: String = "signature"
 
@@ -432,31 +418,6 @@ class MessageSigner(properties: MessageSigningProperties) {
                 throw UncheckedSecurityException(cause = e)
             }
         }
-
-        @JvmStatic
-        fun newBuilder(): Builder {
-            return Builder()
-        }
     }
 
-    class Builder : MessageSigningProperties() {
-        fun signingEnabled(signingEnabled: Boolean) = this.apply { this.signingEnabled = signingEnabled }
-
-        fun stripAvroHeader(stripAvroHeader: Boolean) = this.apply { this.stripAvroHeader = stripAvroHeader }
-
-        fun signatureAlgorithm(signatureAlgorithm: String) = this.apply { this.algorithm = signatureAlgorithm }
-
-        fun signatureProvider(signatureProvider: String?) = this.apply { this.provider = signatureProvider }
-
-        fun signatureKeyAlgorithm(signatureKeyAlgorithm: String) =
-            this.apply { this.keyAlgorithm = signatureKeyAlgorithm }
-
-        fun signatureKeySize(signatureKeySize: Int) = this.apply { this.keySize = signatureKeySize }
-
-        fun privateKeyFile(privateKeyFile: Resource?) = this.apply { this.privateKeyFile = privateKeyFile }
-
-        fun publicKeyFile(publicKeyFile: Resource?) = this.apply { this.publicKeyFile = publicKeyFile }
-
-        fun build(): MessageSigner = MessageSigner(this)
-    }
 }
