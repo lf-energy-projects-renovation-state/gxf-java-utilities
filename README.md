@@ -24,11 +24,9 @@ It can be configured with the encoder / decoder of a specific object using:
 ```java
 new DefaultKafkaConsumerFactory(
         kafkaProperties.buildConsumerProperties(),
-
-ErrorHandlingDeserializer(AvroSerializer(AvroMessage.getEncoder())),
-
-ErrorHandlingDeserializer(AvroDeserializer(AvroMessage.getDecoder()))
-        )
+        ErrorHandlingDeserializer(AvroSerializer(AvroMessage.getEncoder())),
+        ErrorHandlingDeserializer(AvroDeserializer(AvroMessage.getDecoder()))
+)
 ```
 
 ## kafka-message-signing
@@ -42,21 +40,13 @@ Two variations are supported:
 
 The `MessageSigner` class is used for both signing and verifying a signature.
 
-To sign a message, use `MessageSigner`'s `sign()` method: choose between `SignableMessageWrapper` or `ProducerRecord`.
+To sign a message, use one of `MessageSigner`'s sign methods: 
+- `signUsingField(...)` using the `SignableMessageWrapper` to wrap your Avro object;
+- `signUsingHeader(...)` to add the signature to the Avro object's header.
 
-To verify a signature, use `MessageSigner`'s `verify()` method: choose between `SignableMessageWrapper`
-or `ProducerRecord`.
-
-The `MessageSigner` class can be created using `MessageSigner.newBuilder()` with the following configuration options:
-
-- signingEnabled
-- stripAvroHeader
-- signatureAlgorithm
-- signatureProvider
-- signatureKeyAlgorithm
-- signatureKeySize
-- privateKeyFile
-- publicKeyFile
+To verify a signature, use one of `MessageSigner`'s verify methods:
+- `verifyUsingField(...)` using the `SignableMessageWrapper` to wrap your Avro object;
+- `verifyUsingHeader(...)` to read the signature from the Avro object's header.
 
 ### Spring Auto Configuration
 
@@ -66,10 +56,9 @@ You can configure the settings in your `application.yaml` (or properties), for e
 message-signing:
   signing-enabled: true
   strip-avro-header: true
-  algorithm: SHA256withRSA
-  provider: SunRsaSign
+  signature-algorithm: SHA256withRSA
+  signature-provider: SunRsaSign
   key-algorithm: RSA
-  key-size: 2048
   private-key-file: classpath:rsa-private.pem
   public-key-file: classpath:rsa-public.pem
 ```
@@ -77,9 +66,26 @@ message-signing:
 ### Custom or multiple certificates configuration
 
 You can create your own `MessageSigningProperties` object and use `MessageSigner.newMessageSigner(props)`.
-Spring Boot users can extend the `MessageSigningProperties` to add @ConfigurationProperties capabilities and/or to
-support multiple configurations
+Spring Boot users can extend the `MessageSigningProperties` to add `@ConfigurationProperties` capabilities and/or to
+support multiple configurations.
 
+If you want to support multiple keys, you also have to instantiate multiple `MessageSigner` beans. 
+
+Auto configuration (see above) will see when you defined your own MessageSigner or MessageSigningProperties bean and will not auto-create one.
+
+```java
+@ConfigurationProperties(prefix = "your-app.your-message-signing")
+class YourMessageSigningProperties extends MessageSigningProperties {
+}
+
+@Configuration
+class MessageSigningConfiguration {
+    @Bean
+    public MessageSigner yourMessageSigner(YourMessageSigningProperties yourMessageSigningProperties) {
+        return new MessageSigner(yourMessageSigningProperties);
+    }
+}
+```
 ### Creating a public/private key for signing
 
 To generate a public/private keypair, use these two commands:

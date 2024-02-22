@@ -27,22 +27,21 @@ import java.util.regex.Pattern
 @ConditionalOnMissingBean(MessageSigner::class)
 class MessageSigner(properties: MessageSigningProperties) {
 
-    private val signingEnabled: Boolean = properties.signingEnabled
+    val signingEnabled: Boolean = properties.signingEnabled
     private val stripAvroHeader: Boolean = properties.stripAvroHeader
 
-    private val signatureAlgorithm: String = properties.algorithm
+    private val signatureAlgorithm: String = properties.signatureAlgorithm
     private val signatureProvider: String? = determineProvider(properties)
-    private val signatureKeyAlgorithm: String = properties.keyAlgorithm
+    private val keyAlgorithm: String = properties.keyAlgorithm
 
     private var signingKey: PrivateKey? = readPrivateKey(properties.privateKeyFile)
-    private var verificationKey: PublicKey? = readPublicKey(properties.keyAlgorithm, properties.publicKeyFile)
+    private var verificationKey: PublicKey? = readPublicKey(keyAlgorithm, properties.publicKeyFile)
 
-    private val signingSignature: Signature? = signatureInstance(properties.algorithm, signatureProvider, signingKey)
-    private val verificationSignature: Signature? =
-        signatureInstance(properties.algorithm, signatureProvider, verificationKey)
+    private val signingSignature: Signature? = signatureInstance(signatureAlgorithm, signatureProvider, signingKey)
+    private val verificationSignature: Signature? = signatureInstance(signatureAlgorithm, signatureProvider, verificationKey)
 
     init {
-        if (this.signingEnabled) {
+        if (properties.signingEnabled) {
             require(!(signingKey == null && verificationKey == null)) { "A signing key (PrivateKey) or verification key (PublicKey) must be provided" }
         }
     }
@@ -52,7 +51,7 @@ class MessageSigner(properties: MessageSigningProperties) {
     }
 
     /**
-     * Signs the provided `message`, overwriting an existing signature.
+     * Signs the provided `message`, overwriting an existing signature field inside the message object.
      *
      * @param message the message to be signed
      * @return Returns the signed (unwrapped) message. If signing is disabled through configuration, the message will be returned unchanged.
@@ -62,7 +61,7 @@ class MessageSigner(properties: MessageSigningProperties) {
      * @throws UncheckedIOException       if determining the bytes for the message throws an IOException.
      * @throws UncheckedSecurityException if the signing process throws a SignatureException.
      */
-    fun <T> sign(message: SignableMessageWrapper<T>): T {
+    fun <T> signUsingField(message: SignableMessageWrapper<T>): T {
         if (this.signingEnabled) {
             val signatureBytes = this.signature(message)
             message.setSignature(ByteBuffer.wrap(signatureBytes))
@@ -80,7 +79,7 @@ class MessageSigner(properties: MessageSigningProperties) {
      * @throws UncheckedIOException       if determining the bytes for the message throws an IOException.
      * @throws UncheckedSecurityException if the signing process throws a SignatureException.
      */
-    fun sign(producerRecord: ProducerRecord<String, out SpecificRecordBase>): ProducerRecord<String, out SpecificRecordBase> {
+    fun signUsingHeader(producerRecord: ProducerRecord<String, out SpecificRecordBase>): ProducerRecord<String, out SpecificRecordBase> {
         if (this.signingEnabled) {
             val signature = this.signature(producerRecord)
             producerRecord.headers().add(RECORD_HEADER_KEY_SIGNATURE, signature)
@@ -102,7 +101,7 @@ class MessageSigner(properties: MessageSigningProperties) {
      * @throws UncheckedIOException       if determining the bytes for the message throws an IOException.
      * @throws UncheckedSecurityException if the signing process throws a SignatureException.
      */
-    fun signature(message: SignableMessageWrapper<*>): ByteArray {
+    private fun signature(message: SignableMessageWrapper<*>): ByteArray {
         check(this.canSignMessages()) { "This MessageSigner is not configured for signing, it can only be used for verification" }
         val oldSignature = message.getSignature()
         try {
@@ -137,7 +136,7 @@ class MessageSigner(properties: MessageSigningProperties) {
      * @throws UncheckedIOException       if determining the bytes throws an IOException.
      * @throws UncheckedSecurityException if the signing process throws a SignatureException.
      */
-    fun signature(producerRecord: ProducerRecord<String, out SpecificRecordBase>): ByteArray {
+    private fun signature(producerRecord: ProducerRecord<String, out SpecificRecordBase>): ByteArray {
         check(this.canSignMessages()) { "This MessageSigner is not configured for signing, it can only be used for verification" }
         val oldSignatureHeader = producerRecord.headers().lastHeader(RECORD_HEADER_KEY_SIGNATURE)
         try {
@@ -166,7 +165,7 @@ class MessageSigner(properties: MessageSigningProperties) {
     }
 
     /**
-     * Verifies the signature of the provided `message`.
+     * Verifies the signature of the provided `message` using the signature in a message field.
      *
      * @param message the message to be verified
      * @return `true` if the signature of the given `message` was verified; `false`
@@ -177,7 +176,7 @@ class MessageSigner(properties: MessageSigningProperties) {
      * @throws UncheckedSecurityException if the signature verification process throws a
      * SignatureException.
      */
-    fun verify(message: SignableMessageWrapper<*>): Boolean {
+    fun verifyUsingField(message: SignableMessageWrapper<*>): Boolean {
         check(this.canVerifyMessageSignatures()) { "This MessageSigner is not configured for verification, it can only be used for signing" }
 
         val messageSignature = message.getSignature() ?: return false
@@ -199,7 +198,7 @@ class MessageSigner(properties: MessageSigningProperties) {
     }
 
     /**
-     * Verifies the signature of the provided `consumerRecord`.
+     * Verifies the signature of the provided `consumerRecord` using the signature from the message header.
      *
      * @param consumerRecord the record to be verified
      * @return `true` if the signature of the given `consumerRecord` was verified; `false`
@@ -210,7 +209,7 @@ class MessageSigner(properties: MessageSigningProperties) {
      * @throws UncheckedSecurityException if the signature verification process throws a
      * SignatureException.
      */
-    fun verify(consumerRecord: ConsumerRecord<String, out SpecificRecordBase>): Boolean {
+    fun verifyUsingHeader(consumerRecord: ConsumerRecord<String, out SpecificRecordBase>): Boolean {
         check(this.canVerifyMessageSignatures()) { "This MessageSigner is not configured for verification, it can only be used for signing" }
 
         val header = consumerRecord.headers().lastHeader(RECORD_HEADER_KEY_SIGNATURE)
@@ -278,40 +277,9 @@ class MessageSigner(properties: MessageSigningProperties) {
         }
     }
 
-    fun isSigningEnabled(): Boolean {
-        return this.signingEnabled
-    }
-
-    fun signingKey(): Optional<PrivateKey> {
-        return Optional.ofNullable(this.signingKey)
-    }
-
-    fun signingKeyPem(): Optional<String> {
-        return signingKey().map { key: PrivateKey ->
-            this.keyAsMem(key, key.algorithm + " PRIVATE KEY")
-        }
-    }
-
-    fun verificationKey(): Optional<PublicKey> {
-        return Optional.ofNullable(this.verificationKey)
-    }
-
-    fun verificationKeyPem(): Optional<String> {
-        return verificationKey()
-            .map { key: PublicKey ->
-                this.keyAsMem(key, key.algorithm + " PUBLIC KEY")
-            }
-    }
-
-    private fun keyAsMem(key: Key, label: String): String {
-        return ("-----BEGIN $label-----" + "\r\n"
-                + Base64.getMimeEncoder().encodeToString(key.encoded) + "\r\n"
-                + "-----END $label-----" + "\r\n")
-    }
-
     private fun determineProvider(properties: MessageSigningProperties): String? {
         return when {
-            properties.provider != null -> properties.provider
+            properties.signatureProvider != null -> properties.signatureProvider
             this.signingSignature != null -> signingSignature.getProvider()?.name
             this.verificationSignature != null -> verificationSignature.getProvider()?.name
             // Should not happen, set to null and ignore.
@@ -323,7 +291,7 @@ class MessageSigner(properties: MessageSigningProperties) {
         return String.format(
             "MessageSigner[algorithm=\"%s\"-\"%s\", provider=\"%s\", sign=%b, verify=%b]",
             this.signatureAlgorithm,
-            this.signatureKeyAlgorithm,
+            this.keyAlgorithm,
             this.signatureProvider,
             this.canSignMessages(),
             this.canVerifyMessageSignatures()
@@ -336,7 +304,7 @@ class MessageSigner(properties: MessageSigningProperties) {
 
         const val DEFAULT_SIGNATURE_ALGORITHM: String = "SHA256withRSA"
         const val DEFAULT_SIGNATURE_PROVIDER: String = "SunRsaSign"
-        const val DEFAULT_SIGNATURE_KEY_ALGORITHM: String = "RSA"
+        const val DEFAULT_KEY_ALGORITHM: String = "RSA"
 
         const val RECORD_HEADER_KEY_SIGNATURE: String = "signature"
 

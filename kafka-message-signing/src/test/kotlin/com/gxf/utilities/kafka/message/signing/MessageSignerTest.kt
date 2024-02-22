@@ -24,8 +24,8 @@ class MessageSignerTest {
     private val messageSignerProperties = MessageSigningProperties(
         signingEnabled = true,
         stripAvroHeader = true,
-        algorithm = "SHA256withRSA",
-        provider = "SunRsaSign",
+        signatureAlgorithm = "SHA256withRSA",
+        signatureProvider = "SunRsaSign",
         keyAlgorithm = "RSA",
         privateKeyFile = ClassPathResource("/rsa-private.pem"),
         publicKeyFile = ClassPathResource("/rsa-public.pem")
@@ -37,8 +37,7 @@ class MessageSignerTest {
     fun signsMessageWithoutSignature() {
         val messageWrapper: SignableMessageWrapper<*> = this.messageWrapper()
 
-        println(messageSigner.toString())
-        messageSigner.sign(messageWrapper)
+        messageSigner.signUsingField(messageWrapper)
 
         assertThat(messageWrapper.getSignature()).isNotNull()
     }
@@ -47,7 +46,7 @@ class MessageSignerTest {
     fun signsRecordHeaderWithoutSignature() {
         val record = this.producerRecord()
 
-        messageSigner.sign(record)
+        messageSigner.signUsingHeader(record)
 
         assertThat(record.headers().lastHeader(MessageSigner.RECORD_HEADER_KEY_SIGNATURE)).isNotNull()
     }
@@ -61,7 +60,7 @@ class MessageSignerTest {
         val actualSignatureBefore = this.bytes(messageWrapper.getSignature())
         assertThat(actualSignatureBefore).isNotNull().isEqualTo(randomSignature)
 
-        messageSigner.sign(messageWrapper)
+        messageSigner.signUsingField(messageWrapper)
 
         val actualSignatureAfter = this.bytes(messageWrapper.getSignature())
         assertThat(actualSignatureAfter).isNotNull().isNotEqualTo(randomSignature)
@@ -76,7 +75,7 @@ class MessageSignerTest {
         val actualSignatureBefore = record.headers().lastHeader(MessageSigner.RECORD_HEADER_KEY_SIGNATURE).value()
         assertThat(actualSignatureBefore).isNotNull().isEqualTo(randomSignature)
 
-        messageSigner.sign(record)
+        messageSigner.signUsingHeader(record)
 
         val actualSignatureAfter = record.headers().lastHeader(MessageSigner.RECORD_HEADER_KEY_SIGNATURE).value()
         assertThat(actualSignatureAfter).isNotNull().isNotEqualTo(randomSignature)
@@ -86,7 +85,7 @@ class MessageSignerTest {
     fun verifiesMessagesWithValidSignature() {
         val message = this.properlySignedMessage()
 
-        val signatureWasVerified = messageSigner.verify(message)
+        val signatureWasVerified = messageSigner.verifyUsingField(message)
 
         assertThat(signatureWasVerified).isTrue()
     }
@@ -95,7 +94,7 @@ class MessageSignerTest {
     fun verifiesRecordsWithValidSignature() {
         val signedRecord = this.properlySignedRecord()
 
-        val signatureWasVerified: Boolean = messageSigner.verify(signedRecord)
+        val signatureWasVerified: Boolean = messageSigner.verifyUsingHeader(signedRecord)
 
         assertThat(signatureWasVerified).isTrue()
     }
@@ -104,7 +103,7 @@ class MessageSignerTest {
     fun doesNotVerifyMessagesWithoutSignature() {
         val messageWrapper = this.messageWrapper()
 
-        val signatureWasVerified = messageSigner.verify(messageWrapper)
+        val signatureWasVerified = messageSigner.verifyUsingField(messageWrapper)
 
         assertThat(signatureWasVerified).isFalse()
     }
@@ -117,13 +116,13 @@ class MessageSignerTest {
         val exception: Exception = org.junit.jupiter.api.Assertions.assertThrows(
             IllegalStateException::class.java
         ) {
-            messageSigner.verify(
+            messageSigner.verifyUsingHeader(
                 consumerRecord
             )
         }
         val actualMessage = exception.message
 
-        org.junit.jupiter.api.Assertions.assertTrue(actualMessage!!.contains(expectedMessage))
+        assertThat(actualMessage).contains(expectedMessage)
     }
 
     @Test
@@ -131,7 +130,7 @@ class MessageSignerTest {
         val randomSignature = this.randomSignature()
         val messageWrapper = this.messageWrapper(randomSignature)
 
-        val signatureWasVerified = messageSigner.verify(messageWrapper)
+        val signatureWasVerified = messageSigner.verifyUsingField(messageWrapper)
 
         assertThat(signatureWasVerified).isFalse()
     }
@@ -144,7 +143,7 @@ class MessageSignerTest {
         val originalLimit = originalSignature.limit()
         val originalRemaining = originalSignature.remaining()
 
-        messageSigner.verify(message)
+        messageSigner.verifyUsingField(message)
 
         val verifiedSignature = message.getSignature()
         assertThat(verifiedSignature).isEqualTo(originalSignature)
@@ -174,13 +173,13 @@ class MessageSignerTest {
 
     private fun properlySignedMessage(): TestableWrapper {
         val messageWrapper = this.messageWrapper()
-        messageSigner.sign(messageWrapper)
+        messageSigner.signUsingField(messageWrapper)
         return messageWrapper
     }
 
     private fun properlySignedRecord(): ConsumerRecord<String, Message> {
         val producerRecord = this.producerRecord()
-        messageSigner.sign(producerRecord)
+        messageSigner.signUsingHeader(producerRecord)
         return this.producerRecordToConsumerRecord(producerRecord)
     }
 

@@ -1,7 +1,6 @@
 package com.gxf.utilities.kafka.message.signing
 
-import org.junit.jupiter.api.Assertions.assertNotNull
-import org.junit.jupiter.api.Assertions.assertTrue
+import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration
@@ -19,10 +18,8 @@ class MessageSigningAutoConfigurationTest {
 
     @Test
     fun autoConfigurationIntegrationTest() {
-        assertTrue(messageSigner.isSigningEnabled())
-        assertTrue(messageSigner.canSignMessages())
-        assertTrue(messageSigner.canVerifyMessageSignatures())
-        assertNotNull(messageSigner.signingKey().orElseThrow { AssertionError() })
-        assertNotNull(messageSigner.verificationKey().orElseThrow { AssertionError() })
+        assertThat(messageSigner.signingEnabled).isTrue()
+        assertThat(messageSigner.canSignMessages()).isTrue()
+        assertThat(messageSigner.canVerifyMessageSignatures()).isTrue()
     }
 }
