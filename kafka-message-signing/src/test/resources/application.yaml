@@ -1,16 +1,9 @@
 message-signing:
-  enabled: true
-  strip-headers: true
-  signature:
-    algorithm: SHA256withRSA
-    provider: SunRsaSign
-    key:
-      algorithm: RSA
-      size: 2048
-      private: /rsa-private.pem
-      public: /rsa-public.pem
-
-# To be able to integrate with other systems, a conversion of the private key may be required.
-# Converting a PKCS#1 key to PKCS#8 is possible using OpenSSL.
-#
-# openssl pkcs8 -topk8 -inform PEM -in <pkcs#1.pem> -out <pkcs#8.pem> -nocrypt
+  signing-enabled: true
+  strip-avro-header: true
+  algorithm: SHA256withRSA
+  provider: SunRsaSign
+  key-algorithm: RSA
+  key-size: 2048
+  private-key-file: classpath:rsa-private.pem
+  public-key-file: classpath:rsa-public.pem

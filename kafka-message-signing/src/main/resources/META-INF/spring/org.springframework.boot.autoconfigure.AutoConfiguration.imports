@@ -1,1 +1,1 @@
-com.alliander.osgp.kafka.message.signing.MessageSigningAutoConfiguration
+com.gxf.utilities.kafka.message.signing.MessageSigningAutoConfiguration
