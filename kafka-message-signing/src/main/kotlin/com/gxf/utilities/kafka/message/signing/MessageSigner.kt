@@ -31,14 +31,11 @@ class MessageSigner(properties: MessageSigningProperties) {
     private val stripAvroHeader: Boolean = properties.stripAvroHeader
 
     private val signatureAlgorithm: String = properties.signatureAlgorithm
-    private val signatureProvider: String? = determineProvider(properties)
+    private val signatureProvider: String? = properties.signatureProvider
     private val keyAlgorithm: String = properties.keyAlgorithm
 
     private var signingKey: PrivateKey? = readPrivateKey(properties.privateKeyFile)
     private var verificationKey: PublicKey? = readPublicKey(keyAlgorithm, properties.publicKeyFile)
-
-    private val signingSignature: Signature? = signatureInstance(signatureAlgorithm, signatureProvider, signingKey)
-    private val verificationSignature: Signature? = signatureInstance(signatureAlgorithm, signatureProvider, verificationKey)
 
     init {
         if (properties.signingEnabled) {
@@ -47,7 +44,7 @@ class MessageSigner(properties: MessageSigningProperties) {
     }
 
     fun canSignMessages(): Boolean {
-        return this.signingEnabled && this.signingSignature != null
+        return this.signingEnabled && this.signingKey != null
     }
 
     /**
@@ -106,15 +103,14 @@ class MessageSigner(properties: MessageSigningProperties) {
         val oldSignature = message.getSignature()
         try {
             message.setSignature(null)
-            synchronized(signingSignature!!) {
-                val messageBytes: ByteArray = if (this.stripAvroHeader) {
-                    this.stripAvroHeader(this.toByteBuffer(message))
-                } else {
-                    this.toByteBuffer(message)!!.array()
-                }
-                signingSignature.update(messageBytes)
-                return signingSignature.sign()
+            val messageBytes: ByteArray = if (this.stripAvroHeader) {
+                this.stripAvroHeader(this.toByteBuffer(message))
+            } else {
+                this.toByteBuffer(message)!!.array()
             }
+            val signingSignature = signatureInstance(signatureAlgorithm, signatureProvider, signingKey!!)
+            signingSignature.update(messageBytes)
+            return signingSignature.sign()
         } catch (e: SignatureException) {
             throw UncheckedSecurityException("Unable to sign message", e)
         } finally {
@@ -141,16 +137,15 @@ class MessageSigner(properties: MessageSigningProperties) {
         val oldSignatureHeader = producerRecord.headers().lastHeader(RECORD_HEADER_KEY_SIGNATURE)
         try {
             producerRecord.headers().remove(RECORD_HEADER_KEY_SIGNATURE)
-            synchronized(signingSignature!!) {
-                val specificRecordBase = producerRecord.value()
-                val messageBytes: ByteArray = if (this.stripAvroHeader) {
-                    this.stripAvroHeader(this.toByteBuffer(specificRecordBase))
-                } else {
-                    this.toByteBuffer(specificRecordBase).array()
-                }
-                signingSignature.update(messageBytes)
-                return signingSignature.sign()
+            val specificRecordBase = producerRecord.value()
+            val messageBytes: ByteArray = if (this.stripAvroHeader) {
+                this.stripAvroHeader(this.toByteBuffer(specificRecordBase))
+            } else {
+                this.toByteBuffer(specificRecordBase).array()
             }
+            val signingSignature = signatureInstance(signatureAlgorithm, signatureProvider, signingKey!!)
+            signingSignature.update(messageBytes)
+            return signingSignature.sign()
         } catch (e: SignatureException) {
             throw UncheckedSecurityException("Unable to sign message", e)
         } finally {
@@ -161,7 +156,7 @@ class MessageSigner(properties: MessageSigningProperties) {
     }
 
     fun canVerifyMessageSignatures(): Boolean {
-        return this.signingEnabled && this.verificationSignature != null
+        return this.signingEnabled && this.verificationKey != null
     }
 
     /**
@@ -186,9 +181,7 @@ class MessageSigner(properties: MessageSigningProperties) {
 
         try {
             message.setSignature(null)
-            synchronized((verificationSignature)!!) {
-                return this.verifySignatureBytes(signatureBytes, this.toByteBuffer(message))
-            }
+            return this.verifySignatureBytes(signatureBytes, this.toByteBuffer(message))
         } catch (e: SignatureException) {
             throw UncheckedSecurityException("Unable to verify message signature", e)
         } finally {
@@ -223,13 +216,11 @@ class MessageSigner(properties: MessageSigningProperties) {
 
         try {
             consumerRecord.headers().remove(RECORD_HEADER_KEY_SIGNATURE)
-            synchronized(verificationSignature!!) {
-                val specificRecordBase: SpecificRecordBase = consumerRecord.value()
-                return this.verifySignatureBytes(
-                    signatureBytes,
-                    this.toByteBuffer(specificRecordBase)
-                )
-            }
+            val specificRecordBase: SpecificRecordBase = consumerRecord.value()
+            return this.verifySignatureBytes(
+                signatureBytes,
+                this.toByteBuffer(specificRecordBase)
+            )
         } catch (e: SignatureException) {
             throw UncheckedSecurityException("Unable to verify message signature", e)
         }
@@ -242,7 +233,8 @@ class MessageSigner(properties: MessageSigningProperties) {
         } else {
             messageByteBuffer!!.array()
         }
-        verificationSignature!!.update(messageBytes)
+        val verificationSignature = signatureInstance(signatureAlgorithm, signatureProvider, verificationKey!!)
+        verificationSignature.update(messageBytes)
         return verificationSignature.verify(signatureBytes)
     }
 
@@ -277,16 +269,6 @@ class MessageSigner(properties: MessageSigningProperties) {
         }
     }
 
-    private fun determineProvider(properties: MessageSigningProperties): String? {
-        return when {
-            properties.signatureProvider != null -> properties.signatureProvider
-            this.signingSignature != null -> signingSignature.getProvider()?.name
-            this.verificationSignature != null -> verificationSignature.getProvider()?.name
-            // Should not happen, set to null and ignore.
-            else -> null
-        }
-    }
-
     override fun toString(): String {
         return String.format(
             "MessageSigner[algorithm=\"%s\"-\"%s\", provider=\"%s\", sign=%b, verify=%b]",
@@ -314,12 +296,8 @@ class MessageSigner(properties: MessageSigningProperties) {
         private fun signatureInstance(
             signatureAlgorithm: String,
             signatureProvider: String?,
-            signingKey: PrivateKey?
-        ): Signature? {
-            if (signingKey == null) {
-                return null
-            }
-
+            signingKey: PrivateKey
+        ): Signature {
             val signature = signatureInstance(signatureAlgorithm, signatureProvider)
             try {
                 signature.initSign(signingKey)
@@ -333,12 +311,8 @@ class MessageSigner(properties: MessageSigningProperties) {
         private fun signatureInstance(
             signatureAlgorithm: String,
             signatureProvider: String?,
-            verificationKey: PublicKey?
-        ): Signature? {
-            if (verificationKey == null) {
-                return null
-            }
-
+            verificationKey: PublicKey
+        ): Signature {
             val signature = signatureInstance(signatureAlgorithm, signatureProvider)
             try {
                 signature.initVerify(verificationKey)
