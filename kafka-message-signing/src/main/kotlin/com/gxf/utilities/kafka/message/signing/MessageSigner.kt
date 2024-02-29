@@ -20,7 +20,6 @@ import java.nio.charset.StandardCharsets
 import java.security.*
 import java.security.spec.X509EncodedKeySpec
 import java.util.*
-import java.util.function.Consumer
 import java.util.regex.Pattern
 
 @Component
@@ -191,6 +190,14 @@ class MessageSigner(properties: MessageSigningProperties) {
         }
     }
 
+    fun <T> verifyUsingFieldThrowingException(message: SignableMessageWrapper<T>): T {
+        if(this.verifyUsingField(message)) {
+            return message.message
+        } else {
+            throw VerificationException("Verification of message signing failed")
+        }
+    }
+
     /**
      * Verifies the signature of the provided `consumerRecord` using the signature from the message header.
      *
@@ -225,9 +232,9 @@ class MessageSigner(properties: MessageSigningProperties) {
         }
     }
 
-    fun doAfterVerifyUsingHeader(consumerRecord: ConsumerRecord<String, out SpecificRecordBase>, action: Consumer<ConsumerRecord<String, out SpecificRecordBase>>) {
+    fun verifyUsingHeaderThrowingException(consumerRecord: ConsumerRecord<String, out SpecificRecordBase>): ConsumerRecord<String, out SpecificRecordBase> {
         if(this.verifyUsingHeader(consumerRecord)) {
-            action.accept(consumerRecord)
+            return consumerRecord
         } else {
             throw VerificationException("Verification of record signing failed")
         }
