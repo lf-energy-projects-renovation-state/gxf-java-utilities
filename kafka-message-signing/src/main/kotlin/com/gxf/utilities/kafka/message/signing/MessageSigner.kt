@@ -171,17 +171,23 @@ class MessageSigner(properties: MessageSigningProperties) {
      * @throws UncheckedSecurityException if the signature verification process throws a
      * SignatureException.
      */
-    fun verifyUsingField(message: SignableMessageWrapper<*>): Boolean {
+    fun <T> verifyUsingField(message: SignableMessageWrapper<T>): T {
         check(this.canVerifyMessageSignatures()) { "This MessageSigner is not configured for verification, it can only be used for signing" }
 
-        val messageSignature = message.getSignature() ?: return false
+        val messageSignature = message.getSignature() ?: throw IllegalStateException(
+            "This message does not contain a signature"
+        )
         messageSignature.mark()
         val signatureBytes = ByteArray(messageSignature.remaining())
-        messageSignature.get(signatureBytes)
+        messageSignature[signatureBytes]
 
         try {
             message.setSignature(null)
-            return this.verifySignatureBytes(signatureBytes, this.toByteBuffer(message))
+            if(this.verifySignatureBytes(signatureBytes, this.toByteBuffer(message))) {
+                return message.message
+            } else {
+                throw VerificationException("Verification of message signing failed")
+            }
         } catch (e: SignatureException) {
             throw UncheckedSecurityException("Unable to verify message signature", e)
         } finally {
@@ -202,7 +208,7 @@ class MessageSigner(properties: MessageSigningProperties) {
      * @throws UncheckedSecurityException if the signature verification process throws a
      * SignatureException.
      */
-    fun verifyUsingHeader(consumerRecord: ConsumerRecord<String, out SpecificRecordBase>): Boolean {
+    fun verifyUsingHeader(consumerRecord: ConsumerRecord<String, out SpecificRecordBase>): ConsumerRecord<String, out SpecificRecordBase> {
         check(this.canVerifyMessageSignatures()) { "This MessageSigner is not configured for verification, it can only be used for signing" }
 
         val header = consumerRecord.headers().lastHeader(RECORD_HEADER_KEY_SIGNATURE)
@@ -210,17 +216,16 @@ class MessageSigner(properties: MessageSigningProperties) {
                 "This ProducerRecord does not contain a signature header"
             )
         val signatureBytes = header.value()
-        if (signatureBytes == null || signatureBytes.isEmpty()) {
-            return false
-        }
+        check(!(signatureBytes == null || signatureBytes.isEmpty())) { "Signature header is empty" }
 
         try {
             consumerRecord.headers().remove(RECORD_HEADER_KEY_SIGNATURE)
             val specificRecordBase: SpecificRecordBase = consumerRecord.value()
-            return this.verifySignatureBytes(
-                signatureBytes,
-                this.toByteBuffer(specificRecordBase)
-            )
+            if(this.verifySignatureBytes(signatureBytes, this.toByteBuffer(specificRecordBase))) {
+                return consumerRecord
+            } else {
+                throw VerificationException("Verification of record signing failed")
+            }
         } catch (e: SignatureException) {
             throw UncheckedSecurityException("Unable to verify message signature", e)
         }
@@ -246,7 +251,7 @@ class MessageSigner(properties: MessageSigningProperties) {
 
     private fun stripAvroHeader(byteBuffer: ByteBuffer?): ByteArray {
         val bytes = ByteArray(byteBuffer!!.remaining())
-        byteBuffer.get(bytes)
+        byteBuffer[bytes]
         if (this.hasAvroHeader(bytes)) {
             return Arrays.copyOfRange(bytes, AVRO_HEADER_LENGTH, bytes.size)
         }

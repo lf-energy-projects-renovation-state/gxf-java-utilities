@@ -6,8 +6,14 @@ dependencyResolutionManagement {
     versionCatalogs {
         create("libs") {
             version("avro", "1.11.3")
+            version("mockitoKotlin", "5.1.0")
 
             library("avro", "org.apache.avro", "avro").versionRef("avro")
+            library(
+                "mockitoKotlin",
+                "org.mockito.kotlin",
+                "mockito-kotlin"
+            ).versionRef("mockitoKotlin")
         }
     }
 }
