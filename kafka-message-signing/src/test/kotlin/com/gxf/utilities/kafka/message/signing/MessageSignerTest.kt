@@ -105,13 +105,13 @@ class MessageSignerTest {
         val messageWrapper = this.messageWrapper()
         val expectedMessage = "This message does not contain a signature"
 
-        val exception: Throwable = catchThrowable {
+        val throwable = catchThrowable {
             messageSigner.verifyUsingField(messageWrapper)
         }
 
-        val actualMessage = exception.message
-
-        assertThat(actualMessage).contains(expectedMessage)
+        assertThat(throwable)
+            .isInstanceOf(IllegalStateException::class.java)
+            .hasMessageContaining(expectedMessage)
     }
 
     @Test
@@ -119,15 +119,15 @@ class MessageSignerTest {
         val expectedMessage = "This ProducerRecord does not contain a signature header"
         val consumerRecord = this.consumerRecord()
 
-        val exception: Throwable = catchThrowable {
+        val throwable = catchThrowable {
             messageSigner.verifyUsingHeader(
                 consumerRecord
             )
         }
 
-        val actualMessage = exception.message
-
-        assertThat(actualMessage).contains(expectedMessage)
+        assertThat(throwable)
+            .isInstanceOf(IllegalStateException::class.java)
+            .hasMessageContaining(expectedMessage)
     }
 
     @Test
@@ -136,13 +136,13 @@ class MessageSignerTest {
         val messageWrapper = this.messageWrapper(randomSignature)
         val expectedMessage = "Verification of message signing failed"
 
-        val exception: Throwable = catchThrowable {
+        val throwable = catchThrowable {
             messageSigner.verifyUsingField(messageWrapper)
         }
 
-        val actualMessage = exception.message
-
-        assertThat(actualMessage).contains(expectedMessage)
+        assertThat(throwable)
+            .isInstanceOf(VerificationException::class.java)
+            .hasMessageContaining(expectedMessage)
     }
 
     @Test
@@ -152,13 +152,13 @@ class MessageSignerTest {
         consumerRecord.headers().add(MessageSigner.RECORD_HEADER_KEY_SIGNATURE, randomSignature)
         val expectedMessage = "Verification of record signing failed"
 
-        val exception: Throwable = catchThrowable {
+        val throwable = catchThrowable {
             messageSigner.verifyUsingHeader(consumerRecord)
         }
 
-        val actualMessage = exception.message
-
-        assertThat(actualMessage).contains(expectedMessage)
+        assertThat(throwable)
+            .isInstanceOf(VerificationException::class.java)
+            .hasMessageContaining(expectedMessage)
     }
 
     @Test
