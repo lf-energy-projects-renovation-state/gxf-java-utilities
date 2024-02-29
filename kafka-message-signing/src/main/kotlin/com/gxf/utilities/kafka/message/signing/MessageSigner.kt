@@ -20,6 +20,7 @@ import java.nio.charset.StandardCharsets
 import java.security.*
 import java.security.spec.X509EncodedKeySpec
 import java.util.*
+import java.util.function.Consumer
 import java.util.regex.Pattern
 
 @Component
@@ -177,7 +178,7 @@ class MessageSigner(properties: MessageSigningProperties) {
         val messageSignature = message.getSignature() ?: return false
         messageSignature.mark()
         val signatureBytes = ByteArray(messageSignature.remaining())
-        messageSignature.get(signatureBytes)
+        messageSignature[signatureBytes]
 
         try {
             message.setSignature(null)
@@ -210,9 +211,7 @@ class MessageSigner(properties: MessageSigningProperties) {
                 "This ProducerRecord does not contain a signature header"
             )
         val signatureBytes = header.value()
-        if (signatureBytes == null || signatureBytes.isEmpty()) {
-            return false
-        }
+        check(!(signatureBytes == null || signatureBytes.isEmpty())) { "Signature header is empty" }
 
         try {
             consumerRecord.headers().remove(RECORD_HEADER_KEY_SIGNATURE)
@@ -223,6 +222,14 @@ class MessageSigner(properties: MessageSigningProperties) {
             )
         } catch (e: SignatureException) {
             throw UncheckedSecurityException("Unable to verify message signature", e)
+        }
+    }
+
+    fun doAfterVerifyUsingHeader(consumerRecord: ConsumerRecord<String, out SpecificRecordBase>, action: Consumer<ConsumerRecord<String, out SpecificRecordBase>>) {
+        if(this.verifyUsingHeader(consumerRecord)) {
+            action.accept(consumerRecord)
+        } else {
+            throw VerificationException("Verification of record signing failed")
         }
     }
 
@@ -246,7 +253,7 @@ class MessageSigner(properties: MessageSigningProperties) {
 
     private fun stripAvroHeader(byteBuffer: ByteBuffer?): ByteArray {
         val bytes = ByteArray(byteBuffer!!.remaining())
-        byteBuffer.get(bytes)
+        byteBuffer[bytes]
         if (this.hasAvroHeader(bytes)) {
             return Arrays.copyOfRange(bytes, AVRO_HEADER_LENGTH, bytes.size)
         }

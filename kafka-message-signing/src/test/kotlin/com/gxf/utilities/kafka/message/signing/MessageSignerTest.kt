@@ -12,6 +12,9 @@ import org.apache.kafka.clients.producer.ProducerRecord
 import org.apache.kafka.common.header.Header
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
+import org.mockito.kotlin.spy
+import org.mockito.kotlin.times
+import org.mockito.kotlin.verify
 import org.springframework.core.io.ClassPathResource
 import java.nio.ByteBuffer
 import java.nio.charset.StandardCharsets
@@ -100,6 +103,18 @@ class MessageSignerTest {
     }
 
     @Test
+    fun verifiesRecordsWithValidSignatureThenPerformsAction() {
+        val signedRecord = this.properlySignedRecord()
+        val action = spy(object: Consumer<ConsumerRecord<String, out SpecificRecordBase>> {
+            override fun accept(consumerRecord: ConsumerRecord<String, out SpecificRecordBase>) = println(consumerRecord)
+        })
+
+        messageSigner.doAfterVerifyUsingHeader(signedRecord, action)
+
+        verify(action).accept(signedRecord)
+    }
+
+    @Test
     fun doesNotVerifyMessagesWithoutSignature() {
         val messageWrapper = this.messageWrapper()
 
@@ -126,6 +141,25 @@ class MessageSignerTest {
     }
 
     @Test
+    fun doesNotVerifyRecordsWithoutSignatureThenDoesNotPerformAction() {
+        val expectedMessage = "This ProducerRecord does not contain a signature header"
+        val consumerRecord = this.consumerRecord()
+        val action = spy(object: Consumer<ConsumerRecord<String, out SpecificRecordBase>> {
+            override fun accept(consumerRecord: ConsumerRecord<String, out SpecificRecordBase>) = println(consumerRecord)
+        })
+
+        val exception: Exception = org.junit.jupiter.api.Assertions.assertThrows(
+            IllegalStateException::class.java
+        ) {
+            messageSigner.doAfterVerifyUsingHeader(consumerRecord, action)
+        }
+        val actualMessage = exception.message
+
+        assertThat(actualMessage).contains(expectedMessage)
+        verify(action, times(0)).accept(consumerRecord)
+    }
+
+    @Test
     fun doesNotVerifyMessagesWithIncorrectSignature() {
         val randomSignature = this.randomSignature()
         val messageWrapper = this.messageWrapper(randomSignature)
@@ -133,6 +167,38 @@ class MessageSignerTest {
         val signatureWasVerified = messageSigner.verifyUsingField(messageWrapper)
 
         assertThat(signatureWasVerified).isFalse()
+    }
+
+    @Test
+    fun doesNotVerifyRecordsWithIncorrectSignature() {
+        val consumerRecord = this.consumerRecord()
+        val randomSignature = this.randomSignature()
+        consumerRecord.headers().add(MessageSigner.RECORD_HEADER_KEY_SIGNATURE, randomSignature)
+
+        val signatureWasVerified = messageSigner.verifyUsingHeader(consumerRecord)
+
+        assertThat(signatureWasVerified).isFalse()
+    }
+
+    @Test
+    fun doesNotVerifyRecordsWithIncorrectSignatureAndDoesNotPerformAction() {
+        val consumerRecord = this.consumerRecord()
+        val randomSignature = this.randomSignature()
+        consumerRecord.headers().add(MessageSigner.RECORD_HEADER_KEY_SIGNATURE, randomSignature)
+        val action = spy(object: Consumer<ConsumerRecord<String, out SpecificRecordBase>> {
+            override fun accept(consumerRecord: ConsumerRecord<String, out SpecificRecordBase>) = println(consumerRecord)
+        })
+        val expectedMessage = "Verification of record signing failed"
+
+        val exception: Exception = org.junit.jupiter.api.Assertions.assertThrows(
+            VerificationException::class.java
+        ) {
+            messageSigner.doAfterVerifyUsingHeader(consumerRecord, action)
+        }
+        val actualMessage = exception.message
+
+        assertThat(actualMessage).contains(expectedMessage)
+        verify(action, times(0)).accept(consumerRecord)
     }
 
     @Test

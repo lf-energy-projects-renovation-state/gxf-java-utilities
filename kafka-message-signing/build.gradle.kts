@@ -15,6 +15,7 @@ dependencies {
     testImplementation("org.springframework:spring-test")
     testImplementation("org.springframework.boot:spring-boot-test")
     testImplementation("org.springframework.boot:spring-boot-starter")
+    testImplementation(libs.mockitoKotlin)
 }
 
 tasks.test {
