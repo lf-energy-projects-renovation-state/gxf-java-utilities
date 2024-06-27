@@ -28,6 +28,7 @@ class AvroSerializer<T : SpecificRecordBase> : Serializer<T> {
             return existingEncoder
         }
 
+        logger.info("New encoder created for Avro schema {}", message::class)
         val newEncoder = BinaryMessageEncoder<T>(SpecificData(), message.schema)
         encoders[message::class] = newEncoder
         return newEncoder
