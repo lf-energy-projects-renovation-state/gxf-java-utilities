@@ -15,18 +15,22 @@ import java.io.ByteArrayOutputStream
 import kotlin.reflect.KClass
 
 class AvroSerializer<T : SpecificRecordBase> : Serializer<T> {
-    private val encoders: HashMap<KClass<T>, BinaryMessageEncoder<T>> = HashMap()
+    private val encoders: HashMap<KClass<out T>, BinaryMessageEncoder<T>> = HashMap()
 
     companion object {
         private val logger = LoggerFactory.getLogger(AvroSerializer::class.java)
     }
 
     private fun getEncoder(message: T): BinaryMessageEncoder<T> {
-        var encoder = encoders[message::class]
-        if (encoder == null) {
-            encoder = BinaryMessageEncoder<T>(SpecificData(), message.schema)
+        val existingEncoder = encoders[message::class]
+
+        if(existingEncoder != null) {
+            return existingEncoder
         }
-        return encoder
+
+        val newEncoder = BinaryMessageEncoder<T>(SpecificData(), message.schema)
+        encoders[message::class] = newEncoder
+        return newEncoder
     }
 
     /**
