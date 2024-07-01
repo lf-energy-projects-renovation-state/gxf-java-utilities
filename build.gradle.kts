@@ -41,7 +41,7 @@ subprojects {
 
     extensions.configure<StandardDependencyManagementExtension> {
         imports {
-            mavenBom("org.springframework.boot:spring-boot-dependencies:3.2.2")
+            mavenBom("org.springframework.boot:spring-boot-dependencies:3.3.1")
         }
     }
 
