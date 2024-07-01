@@ -1,6 +1,6 @@
 dependencies{
     implementation("org.springframework:spring-context")
-    api("com.microsoft.azure:msal4j:1.13.10")
+    api("com.microsoft.azure:msal4j:1.16.0")
 
     testImplementation("org.junit.jupiter:junit-jupiter-api")
     testImplementation("org.junit.jupiter:junit-jupiter-engine")
