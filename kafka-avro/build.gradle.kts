@@ -1,6 +1,6 @@
 dependencies {
     implementation("org.apache.kafka:kafka-clients")
-    implementation("org.apache.avro:avro:1.11.1")
+    implementation("org.apache.avro:avro:1.11.3")
 
     implementation("org.slf4j:slf4j-api")
 
