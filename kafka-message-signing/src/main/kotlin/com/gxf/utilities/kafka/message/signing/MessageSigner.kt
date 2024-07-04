@@ -6,9 +6,11 @@ package com.gxf.utilities.kafka.message.signing
 
 import com.gxf.utilities.kafka.message.wrapper.SignableMessageWrapper
 import org.apache.avro.message.BinaryMessageEncoder
+import org.apache.avro.specific.SpecificData
 import org.apache.avro.specific.SpecificRecordBase
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.apache.kafka.clients.producer.ProducerRecord
+import org.slf4j.LoggerFactory
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.boot.ssl.pem.PemContent
 import org.springframework.core.io.Resource
@@ -21,6 +23,7 @@ import java.security.*
 import java.security.spec.X509EncodedKeySpec
 import java.util.*
 import java.util.regex.Pattern
+import kotlin.reflect.KClass
 
 @Component
 // Only instantiate when no other bean has been configured
@@ -36,6 +39,8 @@ class MessageSigner(properties: MessageSigningProperties) {
 
     private var signingKey: PrivateKey? = readPrivateKey(properties.privateKeyFile)
     private var verificationKey: PublicKey? = readPublicKey(keyAlgorithm, properties.publicKeyFile)
+
+    private val encoders: HashMap<KClass<out SpecificRecordBase>, BinaryMessageEncoder<SpecificRecordBase>> = HashMap()
 
     init {
         if (properties.signingEnabled) {
@@ -268,10 +273,24 @@ class MessageSigner(properties: MessageSigningProperties) {
 
     private fun toByteBuffer(message: SpecificRecordBase): ByteBuffer {
         try {
-            return BinaryMessageEncoder<Any>(message.specificData, message.schema).encode(message)
+            val encoder = getEncoder(message)
+            return encoder.encode(message)
         } catch (e: IOException) {
             throw UncheckedIOException("Unable to determine ByteBuffer for Message", e)
         }
+    }
+
+    private fun getEncoder(message: SpecificRecordBase): BinaryMessageEncoder<SpecificRecordBase> {
+        val existingEncoder = encoders[message::class]
+
+        if(existingEncoder != null) {
+            return existingEncoder
+        }
+
+        logger.info("New encoder created for Avro schema {}", message::class)
+        val newEncoder = BinaryMessageEncoder<SpecificRecordBase>(SpecificData(), message.schema)
+        encoders[message::class] = newEncoder
+        return newEncoder
     }
 
     override fun toString(): String {
@@ -286,6 +305,8 @@ class MessageSigner(properties: MessageSigningProperties) {
     }
 
     companion object {
+        private val logger = LoggerFactory.getLogger(MessageSigner::class.java)
+
         // Two magic bytes (0xC3, 0x01) followed by an 8-byte fingerprint
         const val AVRO_HEADER_LENGTH: Int = 10
 

@@ -14,30 +14,17 @@ import org.slf4j.LoggerFactory
 import java.io.ByteArrayOutputStream
 import kotlin.reflect.KClass
 
-class AvroSerializer<T : SpecificRecordBase> : Serializer<T> {
-    private val encoders: HashMap<KClass<out T>, BinaryMessageEncoder<T>> = HashMap()
+class AvroSerializer : Serializer<SpecificRecordBase> {
+    val encoders: HashMap<KClass<out SpecificRecordBase>, BinaryMessageEncoder<SpecificRecordBase>> = HashMap()
 
     companion object {
         private val logger = LoggerFactory.getLogger(AvroSerializer::class.java)
     }
 
-    private fun getEncoder(message: T): BinaryMessageEncoder<T> {
-        val existingEncoder = encoders[message::class]
-
-        if(existingEncoder != null) {
-            return existingEncoder
-        }
-
-        logger.info("New encoder created for Avro schema {}", message::class)
-        val newEncoder = BinaryMessageEncoder<T>(SpecificData(), message.schema)
-        encoders[message::class] = newEncoder
-        return newEncoder
-    }
-
     /**
      * Serializes a Byte Array to an Avro specific record
      */
-    override fun serialize(topic: String?, data: T): ByteArray {
+    override fun serialize(topic: String?, data: SpecificRecordBase): ByteArray {
         try {
             logger.trace("Serializing for {}", topic)
             val outputStream = ByteArrayOutputStream()
@@ -47,6 +34,19 @@ class AvroSerializer<T : SpecificRecordBase> : Serializer<T> {
         } catch (ex: Exception) {
             throw SerializationException("Error serializing Avro message for topic: ${topic}", ex)
         }
+    }
+
+    private fun getEncoder(message: SpecificRecordBase): BinaryMessageEncoder<SpecificRecordBase> {
+        val existingEncoder = encoders[message::class]
+
+        if(existingEncoder != null) {
+            return existingEncoder
+        }
+
+        logger.info("New encoder created for Avro schema {}", message::class)
+        val newEncoder = BinaryMessageEncoder<SpecificRecordBase>(SpecificData(), message.schema)
+        encoders[message::class] = newEncoder
+        return newEncoder
     }
 }
 
