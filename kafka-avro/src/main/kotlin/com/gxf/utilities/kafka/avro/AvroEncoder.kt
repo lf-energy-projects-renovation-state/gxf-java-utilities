@@ -6,7 +6,6 @@ import org.apache.avro.specific.SpecificRecordBase
 import org.slf4j.LoggerFactory
 import java.io.IOException
 import java.io.OutputStream
-import java.nio.ByteBuffer
 import kotlin.reflect.KClass
 
 object AvroEncoder {
@@ -15,9 +14,12 @@ object AvroEncoder {
     private val logger = LoggerFactory.getLogger(AvroEncoder::class.java)
 
     @Throws(IOException::class)
-    fun encode(message: SpecificRecordBase): ByteBuffer {
+    fun encode(message: SpecificRecordBase): ByteArray {
         val encoder = getEncoder(message)
-        return encoder.encode(message)
+        val byteBuffer = encoder.encode(message)
+        val bytes = ByteArray(byteBuffer.remaining())
+        byteBuffer[bytes]
+        return bytes
     }
 
     @Throws(IOException::class)

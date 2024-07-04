@@ -258,7 +258,9 @@ class MessageSigner(properties: MessageSigningProperties) {
     private fun toByteArray(message: SignableMessageWrapper<*>): ByteArray {
         try {
             val byteBuffer = message.toByteBuffer()
-            return byteBufferToByteArray(byteBuffer)
+            val bytes = ByteArray(byteBuffer.remaining())
+            byteBuffer[bytes]
+            return bytes
         } catch (e: IOException) {
             throw UncheckedIOException("Unable to determine bytes for message", e)
         }
@@ -266,17 +268,10 @@ class MessageSigner(properties: MessageSigningProperties) {
 
     private fun toByteArray(message: SpecificRecordBase): ByteArray {
         try {
-            val byteBuffer = AvroEncoder.encode(message)
-            return byteBufferToByteArray(byteBuffer)
+            return AvroEncoder.encode(message)
         } catch (e: IOException) {
             throw UncheckedIOException("Unable to determine bytes for message", e)
         }
-    }
-
-    private fun byteBufferToByteArray(byteBuffer: ByteBuffer): ByteArray {
-        val bytes = ByteArray(byteBuffer.remaining())
-        byteBuffer[bytes]
-        return bytes
     }
 
     override fun toString(): String {
