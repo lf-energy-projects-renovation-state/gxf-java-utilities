@@ -6,7 +6,8 @@ dependencies {
     implementation("org.springframework:spring-context")
     implementation("org.springframework.kafka:spring-kafka")
     implementation("org.springframework.boot:spring-boot-autoconfigure")
-    implementation("com.gxf.utilities:kafka-avro")
+
+    implementation(project(":kafka-avro"))
 
     api(libs.avro)
 
