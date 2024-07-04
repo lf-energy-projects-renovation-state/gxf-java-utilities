@@ -268,7 +268,7 @@ class MessageSignerTest {
     private class TestableWrapper : SignableMessageWrapper<String>("Some test message") {
         private var signature: ByteBuffer? = null
 
-        override fun toByteBuffer(): ByteBuffer? {
+        override fun toByteBuffer(): ByteBuffer {
             return ByteBuffer.wrap(message.toByteArray(StandardCharsets.UTF_8))
         }
 

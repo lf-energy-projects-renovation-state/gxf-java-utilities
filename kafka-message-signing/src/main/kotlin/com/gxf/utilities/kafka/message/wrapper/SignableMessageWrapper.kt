@@ -17,7 +17,7 @@ abstract class SignableMessageWrapper<T>(val message: T) {
      * @return ByteBuffer of the whole message
      */
     @Throws(IOException::class)
-    abstract fun toByteBuffer(): ByteBuffer?
+    abstract fun toByteBuffer(): ByteBuffer
 
     /**
      * @return ByteBuffer of the signature in the message
