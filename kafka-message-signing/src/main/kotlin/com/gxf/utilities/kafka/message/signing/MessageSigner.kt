@@ -9,6 +9,8 @@ import com.gxf.utilities.kafka.message.wrapper.SignableMessageWrapper
 import org.apache.avro.specific.SpecificRecordBase
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.apache.kafka.clients.producer.ProducerRecord
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.boot.ssl.pem.PemContent
 import org.springframework.core.io.Resource
@@ -163,28 +165,26 @@ class MessageSigner(properties: MessageSigningProperties) {
      * @param message the message to be verified
      * @return `true` if the signature of the given `message` was verified; `false`
      * if not.
-     * @throws IllegalStateException      if this message signer has a private key needed for signing
-     * messages, but does not have the public key for signature verification.
-     * @throws UncheckedIOException       if determining the bytes for the message throws an IOException.
-     * @throws UncheckedSecurityException if the signature verification process throws a
-     * SignatureException.
      */
-    fun <T> verifyUsingField(message: SignableMessageWrapper<T>): T {
-        check(this.canVerifyMessageSignatures()) { "This MessageSigner is not configured for verification, it can only be used for signing" }
+    fun <T> verifyUsingField(message: SignableMessageWrapper<T>): Boolean {
+        if (!this.canVerifyMessageSignatures()) {
+            logger.error("This MessageSigner is not configured for verification, it can only be used for signing")
+            return false
+        }
 
-        val messageSignature = message.getSignature() ?: throw IllegalStateException(
-            "This message does not contain a signature"
-        )
+        val messageSignature = message.getSignature()
+
+        if (messageSignature == null || messageSignature.isEmpty()) {
+            logger.error("This message does not contain a signature")
+            return false
+        }
 
         try {
             message.setSignature(null)
-            if(this.verifySignatureBytes(messageSignature, this.toByteArray(message))) {
-                return message.message
-            } else {
-                throw VerificationException("Verification of message signing failed")
-            }
-        } catch (e: SignatureException) {
-            throw UncheckedSecurityException("Unable to verify message signature", e)
+            return this.verifySignatureBytes(messageSignature, this.toByteArray(message))
+        } catch (e: Exception) {
+            logger.error("Unable to verify message signature", e)
+            return false
         } finally {
             message.setSignature(messageSignature)
         }
@@ -196,32 +196,32 @@ class MessageSigner(properties: MessageSigningProperties) {
      * @param consumerRecord the record to be verified
      * @return `true` if the signature of the given `consumerRecord` was verified; `false`
      * if not.
-     * @throws IllegalStateException      if this message signer has a private key needed for signing
-     * messages, but does not have the public key for signature verification.
-     * @throws UncheckedIOException       if determining the bytes throws an IOException.
-     * @throws UncheckedSecurityException if the signature verification process throws a
      * SignatureException.
      */
-    fun verifyUsingHeader(consumerRecord: ConsumerRecord<String, out SpecificRecordBase>): ConsumerRecord<String, out SpecificRecordBase> {
-        check(this.canVerifyMessageSignatures()) { "This MessageSigner is not configured for verification, it can only be used for signing" }
+    fun verifyUsingHeader(consumerRecord: ConsumerRecord<String, out SpecificRecordBase>): Boolean {
+        if (!this.canVerifyMessageSignatures()) {
+            logger.error("This MessageSigner is not configured for verification, it can only be used for signing")
+            return false
+        }
 
         val header = consumerRecord.headers().lastHeader(RECORD_HEADER_KEY_SIGNATURE)
-            ?: throw IllegalStateException(
-                "This ProducerRecord does not contain a signature header"
-            )
+        if (header == null) {
+            logger.error("This ProducerRecord does not contain a signature header")
+            return false
+        }
+
         val signatureBytes = header.value()
-        check(!(signatureBytes == null || signatureBytes.isEmpty())) { "Signature header is empty" }
+        if (signatureBytes == null || signatureBytes.isEmpty()) {
+            logger.error("Signature header is empty")
+            return false
+        }
 
         try {
-            consumerRecord.headers().remove(RECORD_HEADER_KEY_SIGNATURE)
             val specificRecordBase: SpecificRecordBase = consumerRecord.value()
-            if(this.verifySignatureBytes(signatureBytes, this.toByteArray(specificRecordBase))) {
-                return consumerRecord
-            } else {
-                throw VerificationException("Verification of record signing failed")
-            }
-        } catch (e: SignatureException) {
-            throw UncheckedSecurityException("Unable to verify message signature", e)
+            return this.verifySignatureBytes(signatureBytes, this.toByteArray(specificRecordBase))
+        } catch (e: Exception) {
+            logger.error("Unable to verify message signature", e)
+            return false
         }
     }
 
@@ -288,6 +288,8 @@ class MessageSigner(properties: MessageSigningProperties) {
         const val RECORD_HEADER_KEY_SIGNATURE: String = "signature"
 
         private val PEM_REMOVAL_PATTERN: Pattern = Pattern.compile("-----(?:BEGIN|END) .*?-----|\\r|\\n")
+
+        val logger: Logger = LoggerFactory.getLogger(this::class.java)
 
         @JvmStatic
         private fun signatureInstance(

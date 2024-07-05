@@ -11,7 +11,6 @@ import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.apache.kafka.clients.producer.ProducerRecord
 import org.apache.kafka.common.header.Header
 import org.assertj.core.api.Assertions.assertThat
-import org.assertj.core.api.Assertions.catchThrowable
 import org.junit.jupiter.api.Test
 import org.springframework.core.io.ClassPathResource
 import java.nio.charset.StandardCharsets
@@ -87,7 +86,7 @@ class MessageSignerTest {
 
         val signatureWasVerified = messageSigner.verifyUsingField(message)
 
-        assertThat(signatureWasVerified).isEqualTo(message.message)
+        assertThat(signatureWasVerified).isTrue()
     }
 
     @Test
@@ -96,52 +95,35 @@ class MessageSignerTest {
 
         val result = messageSigner.verifyUsingHeader(signedRecord)
 
-        assertThat(result).isEqualTo(signedRecord)
+        assertThat(result).isTrue()
     }
 
     @Test
     fun doesNotVerifyMessagesWithoutSignature() {
         val messageWrapper = this.messageWrapper()
-        val expectedMessage = "This message does not contain a signature"
 
-        val throwable = catchThrowable {
-            messageSigner.verifyUsingField(messageWrapper)
-        }
+        val validSignature = messageSigner.verifyUsingField(messageWrapper)
 
-        assertThat(throwable)
-            .isInstanceOf(IllegalStateException::class.java)
-            .hasMessageContaining(expectedMessage)
+        assertThat(validSignature).isFalse()
     }
 
     @Test
     fun doesNotVerifyRecordsWithoutSignature() {
-        val expectedMessage = "This ProducerRecord does not contain a signature header"
         val consumerRecord = this.consumerRecord()
 
-        val throwable = catchThrowable {
-            messageSigner.verifyUsingHeader(
-                consumerRecord
-            )
-        }
+        val validSignature = messageSigner.verifyUsingHeader(consumerRecord)
 
-        assertThat(throwable)
-            .isInstanceOf(IllegalStateException::class.java)
-            .hasMessageContaining(expectedMessage)
+        assertThat(validSignature).isFalse()
     }
 
     @Test
     fun doesNotVerifyMessagesWithIncorrectSignature() {
         val randomSignature = this.randomSignature()
         val messageWrapper = this.messageWrapper(randomSignature)
-        val expectedMessage = "Verification of message signing failed"
 
-        val throwable = catchThrowable {
-            messageSigner.verifyUsingField(messageWrapper)
-        }
+        val validSignature =messageSigner.verifyUsingField(messageWrapper)
 
-        assertThat(throwable)
-            .isInstanceOf(VerificationException::class.java)
-            .hasMessageContaining(expectedMessage)
+        assertThat(validSignature).isFalse()
     }
 
     @Test
@@ -149,15 +131,10 @@ class MessageSignerTest {
         val consumerRecord = this.consumerRecord()
         val randomSignature = this.randomSignature()
         consumerRecord.headers().add(MessageSigner.RECORD_HEADER_KEY_SIGNATURE, randomSignature)
-        val expectedMessage = "Verification of record signing failed"
 
-        val throwable = catchThrowable {
-            messageSigner.verifyUsingHeader(consumerRecord)
-        }
+        val validSignature = messageSigner.verifyUsingHeader(consumerRecord)
 
-        assertThat(throwable)
-            .isInstanceOf(VerificationException::class.java)
-            .hasMessageContaining(expectedMessage)
+        assertThat(validSignature).isFalse()
     }
 
     @Test
