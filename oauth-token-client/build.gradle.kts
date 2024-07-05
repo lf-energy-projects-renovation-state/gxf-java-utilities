@@ -1,6 +1,6 @@
 dependencies{
     implementation("org.springframework:spring-context")
-    api("com.microsoft.azure:msal4j:1.16.0")
+    api(libs.msal)
 
     testImplementation("org.junit.jupiter:junit-jupiter-api")
     testImplementation("org.junit.jupiter:junit-jupiter-engine")
@@ -19,7 +19,7 @@ testing {
             dependencies {
                 implementation(project())
                 implementation("org.springframework.boot:spring-boot-starter-test")
-                implementation("org.mock-server:mockserver-spring-test-listener:5.15.0")
+                implementation(testLibs.mockServer)
             }
         }
     }

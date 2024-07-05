@@ -1,6 +1,6 @@
 dependencies {
     implementation("org.apache.kafka:kafka-clients")
-    implementation("com.microsoft.azure:msal4j:1.16.0")
+    implementation(libs.msal)
 
     implementation("org.slf4j:slf4j-api")
 
