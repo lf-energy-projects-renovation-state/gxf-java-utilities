@@ -1,13 +1,12 @@
 import io.spring.gradle.dependencymanagement.internal.dsl.StandardDependencyManagementExtension
 import org.jetbrains.kotlin.com.github.gundy.semver4j.SemVer
-import org.jetbrains.kotlin.gradle.dsl.JvmTarget
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+import org.jetbrains.kotlin.gradle.dsl.KotlinJvmProjectExtension
 import java.net.URI
 
 plugins {
     id("io.spring.dependency-management") version "1.1.4" apply false
-    kotlin("jvm") version "1.9.22" apply false
-    kotlin("plugin.spring") version "1.9.22" apply false
+    kotlin("jvm") version "2.0.0" apply false
+    kotlin("plugin.spring") version "2.0.0" apply false
 }
 
 group = "com.gxf.utilities"
@@ -30,24 +29,22 @@ subprojects {
         mavenCentral()
     }
 
+    extensions.configure<StandardDependencyManagementExtension> {
+        imports {
+            mavenBom("org.springframework.boot:spring-boot-dependencies:3.3.1")
+        }
+    }
+
     extensions.configure<JavaPluginExtension> {
         withJavadocJar()
         withSourcesJar()
-
-        toolchain {
-            languageVersion.set(JavaLanguageVersion.of(21))
-        }
     }
 
-    extensions.configure<StandardDependencyManagementExtension> {
-        imports {
-            mavenBom("org.springframework.boot:spring-boot-dependencies:3.2.2")
+    extensions.configure<KotlinJvmProjectExtension> {
+        jvmToolchain {
+            languageVersion = JavaLanguageVersion.of(21)
         }
-    }
-
-    tasks.withType<KotlinCompile> {
         compilerOptions {
-            jvmTarget = JvmTarget.JVM_21
             freeCompilerArgs = listOf("-Xjsr305=strict")
         }
     }
@@ -66,6 +63,11 @@ subprojects {
                     username = System.getenv("GITHUB_ACTOR")
                     password = System.getenv("GITHUB_TOKEN")
                 }
+            }
+        }
+        publications {
+            create<MavenPublication>("java") {
+                from(components.getByName("java"))
             }
         }
     }
