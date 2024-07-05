@@ -7,8 +7,16 @@ plugins {
     id("io.spring.dependency-management") version "1.1.4" apply false
     kotlin("jvm") version "2.0.0" apply false
     kotlin("plugin.spring") version "2.0.0" apply false
+    id("org.sonarqube") version "5.0.0.4638"
 }
 
+sonar {
+    properties {
+        property("sonar.host.url", "https://sonarcloud.io")
+        property("sonar.projectKey", "OSGP_gxf-java-utilities")
+        property("sonar.organization", "gxf")
+    }
+}
 group = "com.gxf.utilities"
 version = System.getenv("GITHUB_REF_NAME")
             ?.replace("/", "-")
@@ -21,6 +29,8 @@ subprojects {
     apply(plugin = "org.jetbrains.kotlin.plugin.spring")
     apply(plugin = "io.spring.dependency-management")
     apply(plugin = "org.gradle.maven-publish")
+    apply(plugin = "jacoco")
+    apply(plugin = "jacoco-report-aggregation")
 
     group = rootProject.group
     version = rootProject.version
