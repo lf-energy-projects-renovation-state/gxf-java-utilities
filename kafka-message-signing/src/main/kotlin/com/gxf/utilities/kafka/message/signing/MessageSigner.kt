@@ -15,7 +15,6 @@ import org.springframework.core.io.Resource
 import org.springframework.stereotype.Component
 import java.io.IOException
 import java.io.UncheckedIOException
-import java.nio.ByteBuffer
 import java.nio.charset.StandardCharsets
 import java.security.*
 import java.security.spec.X509EncodedKeySpec
@@ -61,7 +60,7 @@ class MessageSigner(properties: MessageSigningProperties) {
     fun <T> signUsingField(message: SignableMessageWrapper<T>): T {
         if (this.signingEnabled) {
             val signatureBytes = this.signature(message)
-            message.setSignature(ByteBuffer.wrap(signatureBytes))
+            message.setSignature(signatureBytes)
         }
         return message.message
     }
@@ -176,13 +175,10 @@ class MessageSigner(properties: MessageSigningProperties) {
         val messageSignature = message.getSignature() ?: throw IllegalStateException(
             "This message does not contain a signature"
         )
-        messageSignature.mark()
-        val signatureBytes = ByteArray(messageSignature.remaining())
-        messageSignature[signatureBytes]
 
         try {
             message.setSignature(null)
-            if(this.verifySignatureBytes(signatureBytes, this.toByteArray(message))) {
+            if(this.verifySignatureBytes(messageSignature, this.toByteArray(message))) {
                 return message.message
             } else {
                 throw VerificationException("Verification of message signing failed")
@@ -190,7 +186,6 @@ class MessageSigner(properties: MessageSigningProperties) {
         } catch (e: SignatureException) {
             throw UncheckedSecurityException("Unable to verify message signature", e)
         } finally {
-            messageSignature.reset()
             message.setSignature(messageSignature)
         }
     }
@@ -257,10 +252,7 @@ class MessageSigner(properties: MessageSigningProperties) {
 
     private fun toByteArray(message: SignableMessageWrapper<*>): ByteArray {
         try {
-            val byteBuffer = message.toByteBuffer()
-            val bytes = ByteArray(byteBuffer.remaining())
-            byteBuffer[bytes]
-            return bytes
+            return message.toByteArray()
         } catch (e: IOException) {
             throw UncheckedIOException("Unable to determine bytes for message", e)
         }
