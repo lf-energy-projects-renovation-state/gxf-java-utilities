@@ -14,10 +14,9 @@ import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.catchThrowable
 import org.junit.jupiter.api.Test
 import org.springframework.core.io.ClassPathResource
-import java.nio.ByteBuffer
 import java.nio.charset.StandardCharsets
 import java.security.SecureRandom
-import java.util.*
+import java.util.Random
 import java.util.function.Consumer
 
 class MessageSignerTest {
@@ -56,14 +55,14 @@ class MessageSignerTest {
     fun signsMessageReplacingSignature() {
         val randomSignature = this.randomSignature()
         val messageWrapper = this.messageWrapper()
-        messageWrapper.setSignature(ByteBuffer.wrap(randomSignature))
+        messageWrapper.setSignature(randomSignature)
 
-        val actualSignatureBefore = this.bytes(messageWrapper.getSignature())
+        val actualSignatureBefore = messageWrapper.getSignature()
         assertThat(actualSignatureBefore).isNotNull().isEqualTo(randomSignature)
 
         messageSigner.signUsingField(messageWrapper)
 
-        val actualSignatureAfter = this.bytes(messageWrapper.getSignature())
+        val actualSignatureAfter = messageWrapper.getSignature()
         assertThat(actualSignatureAfter).isNotNull().isNotEqualTo(randomSignature)
     }
 
@@ -165,17 +164,11 @@ class MessageSignerTest {
     fun verifiesMessagesPreservingTheSignatureAndItsProperties() {
         val message = this.properlySignedMessage()
         val originalSignature = message.getSignature()
-        val originalPosition = originalSignature!!.position()
-        val originalLimit = originalSignature.limit()
-        val originalRemaining = originalSignature.remaining()
 
         messageSigner.verifyUsingField(message)
 
         val verifiedSignature = message.getSignature()
         assertThat(verifiedSignature).isEqualTo(originalSignature)
-        assertThat(verifiedSignature!!.position()).isEqualTo(originalPosition)
-        assertThat(verifiedSignature.limit()).isEqualTo(originalLimit)
-        assertThat(verifiedSignature.remaining()).isEqualTo(originalRemaining)
     }
 
     @Test
@@ -193,7 +186,7 @@ class MessageSignerTest {
 
     private fun messageWrapper(signature: ByteArray): TestableWrapper {
         val testableWrapper = TestableWrapper()
-        testableWrapper.setSignature(ByteBuffer.wrap(signature))
+        testableWrapper.setSignature(signature)
         return testableWrapper
     }
 
@@ -228,15 +221,6 @@ class MessageSignerTest {
         return signature
     }
 
-    private fun bytes(byteBuffer: ByteBuffer?): ByteArray? {
-        if (byteBuffer == null) {
-            return null
-        }
-        val bytes = ByteArray(byteBuffer.remaining())
-        byteBuffer[bytes]
-        return bytes
-    }
-
     private fun producerRecord(): ProducerRecord<String, Message> {
         return ProducerRecord("topic", this.message())
     }
@@ -266,17 +250,17 @@ class MessageSignerTest {
     }
 
     private class TestableWrapper : SignableMessageWrapper<String>("Some test message") {
-        private var signature: ByteBuffer? = null
+        private var signature: ByteArray? = null
 
-        override fun toByteBuffer(): ByteBuffer {
-            return ByteBuffer.wrap(message.toByteArray(StandardCharsets.UTF_8))
+        override fun toByteArray(): ByteArray {
+            return message.toByteArray(StandardCharsets.UTF_8)
         }
 
-        override fun getSignature(): ByteBuffer? {
+        override fun getSignature(): ByteArray? {
             return this.signature
         }
 
-        override fun setSignature(signature: ByteBuffer?) {
+        override fun setSignature(signature: ByteArray?) {
             this.signature = signature
         }
     }
