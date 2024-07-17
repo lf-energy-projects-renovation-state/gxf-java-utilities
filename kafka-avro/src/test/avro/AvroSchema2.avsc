@@ -1,0 +1,14 @@
+{
+  "type": "record",
+  "name": "AvroSchema2",
+  "namespace": "com.alliander.gxf.utilities.kafka.avro",
+  "fields": [
+    {
+      "name": "message2",
+      "type": {
+        "type": "string",
+        "avro.java.string": "String"
+      }
+    }
+  ]
+}

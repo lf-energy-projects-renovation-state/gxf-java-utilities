@@ -1,0 +1,21 @@
+{
+  "type": "record",
+  "name": "AvroSchema1",
+  "namespace": "com.alliander.gxf.utilities.kafka.avro",
+  "fields": [
+    {
+      "name": "field1",
+      "type": {
+        "type": "string",
+        "avro.java.string": "String"
+      }
+    },
+    {
+      "name": "field2",
+      "type": {
+        "type": "string",
+        "avro.java.string": "String"
+      }
+    }
+  ]
+}
