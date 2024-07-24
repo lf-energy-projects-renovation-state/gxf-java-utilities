@@ -25,7 +25,7 @@ dependencyResolutionManagement {
         }
 
         create("testLibs") {
-            version("mockitoKotlin", "5.1.0")
+            version("mockitoKotlin", "5.4.0")
             version("mockServer", "5.15.0")
 
             library("mockitoKotlin", "org.mockito.kotlin", "mockito-kotlin").versionRef("mockitoKotlin")
