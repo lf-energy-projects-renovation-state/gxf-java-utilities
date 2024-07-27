@@ -18,7 +18,7 @@ dependencyResolutionManagement {
     versionCatalogs {
         create("libs") {
             version("avro", "1.11.3")
-            version("msal4j", "1.16.1")
+            version("msal4j", "1.16.2")
 
             library("avro", "org.apache.avro", "avro").versionRef("avro")
             library("msal", "com.microsoft.azure", "msal4j").versionRef("msal4j")
