@@ -17,7 +17,7 @@ include("kafka-message-signing")
 dependencyResolutionManagement {
     versionCatalogs {
         create("libs") {
-            version("avro", "1.11.3")
+            version("avro", "1.12.0")
             version("msal4j", "1.16.1")
 
             library("avro", "org.apache.avro", "avro").versionRef("avro")
