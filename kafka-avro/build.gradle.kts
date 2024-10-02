@@ -1,3 +1,6 @@
+import com.github.davidmc24.gradle.plugin.avro.GenerateAvroJavaTask
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+
 plugins {
     id("com.github.davidmc24.gradle.plugin.avro") version "1.9.1"
 }
@@ -14,4 +17,10 @@ dependencies {
     testImplementation("org.assertj:assertj-core")
 
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+}
+
+tasks.withType<KotlinCompile> {
+    dependsOn(
+        tasks.withType<GenerateAvroJavaTask>()
+    )
 }
