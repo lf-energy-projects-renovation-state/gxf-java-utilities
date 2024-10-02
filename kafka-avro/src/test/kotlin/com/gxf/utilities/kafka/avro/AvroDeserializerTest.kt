@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: Contributors to the GXF project
+//
+// SPDX-License-Identifier: Apache-2.0
 package com.gxf.utilities.kafka.avro
 
 import com.alliander.gxf.utilities.kafka.avro.AvroSchema1
@@ -17,14 +20,11 @@ class AvroDeserializerTest {
         val message3 = AvroSchema3("message in a bottle")
         val deserializer = AvroDeserializer(listOf(AvroSchema1.getClassSchema(), AvroSchema2.getClassSchema()))
 
-        assertThat(deserializer.deserialize("topic1", message1.toByteBuffer().array()))
-            .isEqualTo(message1)
-        assertThat(deserializer.deserialize("topic2", message2.toByteBuffer().array()))
-            .isEqualTo(message2)
+        assertThat(deserializer.deserialize("topic1", message1.toByteBuffer().array())).isEqualTo(message1)
+        assertThat(deserializer.deserialize("topic2", message2.toByteBuffer().array())).isEqualTo(message2)
 
-        assertThatThrownBy({deserializer.deserialize("topic3", message3.toByteBuffer().array())})
+        assertThatThrownBy({ deserializer.deserialize("topic3", message3.toByteBuffer().array()) })
             .isInstanceOf(SerializationException::class.java)
-            .hasMessageContaining("Error deserializing Avro message for topic: topic3");
-
+            .hasMessageContaining("Error deserializing Avro message for topic: topic3")
     }
 }
