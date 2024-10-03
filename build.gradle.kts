@@ -4,10 +4,10 @@ import org.jetbrains.kotlin.gradle.dsl.KotlinJvmProjectExtension
 import java.net.URI
 
 plugins {
-    id("io.spring.dependency-management") version "1.1.5" apply false
-    kotlin("jvm") version "2.0.0" apply false
-    kotlin("plugin.spring") version "2.0.0" apply false
-    id("org.sonarqube") version "5.0.0.4638"
+    id("io.spring.dependency-management") version "1.1.6" apply false
+    kotlin("jvm") version "2.0.20" apply false
+    kotlin("plugin.spring") version "2.0.20" apply false
+    id("org.sonarqube") version "5.1.0.4882"
 }
 
 sonar {
@@ -41,7 +41,7 @@ subprojects {
 
     extensions.configure<StandardDependencyManagementExtension> {
         imports {
-            mavenBom("org.springframework.boot:spring-boot-dependencies:3.3.1")
+            mavenBom("org.springframework.boot:spring-boot-dependencies:3.3.4")
         }
     }
 
