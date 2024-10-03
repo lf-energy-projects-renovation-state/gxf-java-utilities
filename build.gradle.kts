@@ -95,7 +95,10 @@ subprojects {
         }
     }
 
-    tasks.register<DependencyReportTask>("dependenciesAll"){ group = "help" }
+    tasks.register<DependencyReportTask>("dependenciesAll"){
+        description = "Displays all dependencies declared in all sub projects"
+        group = "help"
+    }
 
     tasks.withType<Test> {
         useJUnitPlatform()
