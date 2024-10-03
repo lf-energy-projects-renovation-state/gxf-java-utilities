@@ -1,8 +1,6 @@
-/*
-SPDX-FileCopyrightText: Contributors to the GXF project
-
-SPDX-License-Identifier: Apache-2.0
-*/
+// SPDX-FileCopyrightText: Copyright Contributors to the GXF project
+//
+// SPDX-License-Identifier: Apache-2.0
 package com.gxf.utilities.spring.oauth.config
 
 import com.gxf.utilities.spring.oauth.exceptions.OAuthTokenException
@@ -10,7 +8,6 @@ import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
 import org.springframework.core.io.ClassPathResource
-
 
 internal class OAuthClientConfigTest {
 
@@ -24,7 +21,7 @@ internal class OAuthClientConfigTest {
     @Test
     fun `should throw exception for non existent private key`() {
         val client = OAuthClientConfig()
-        assertThatThrownBy { client.getPrivateKey(ClassPathResource("keys/does-not-exist.key"))}
+        assertThatThrownBy { client.getPrivateKey(ClassPathResource("keys/does-not-exist.key")) }
             .isInstanceOf(OAuthTokenException::class.java)
             .hasMessage("Error getting private key")
     }
@@ -40,9 +37,8 @@ internal class OAuthClientConfigTest {
     fun `should throw exception for non existent certificate`() {
         val client = OAuthClientConfig()
 
-        assertThatThrownBy { client.getCertificate(ClassPathResource("keys/does-not-exist.key"))}
+        assertThatThrownBy { client.getCertificate(ClassPathResource("keys/does-not-exist.key")) }
             .isInstanceOf(OAuthTokenException::class.java)
             .hasMessage("Error getting certificate")
     }
-
 }

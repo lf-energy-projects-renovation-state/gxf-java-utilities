@@ -1,10 +1,13 @@
 // SPDX-FileCopyrightText: Copyright Contributors to the GXF project
 //
 // SPDX-License-Identifier: Apache-2.0
-
 package com.gxf.utilities.kafka.message.signing
 
 import com.gxf.utilities.kafka.message.wrapper.SignableMessageWrapper
+import java.nio.charset.StandardCharsets
+import java.security.SecureRandom
+import java.util.Random
+import java.util.function.Consumer
 import org.apache.avro.Schema
 import org.apache.avro.specific.SpecificRecordBase
 import org.apache.kafka.clients.consumer.ConsumerRecord
@@ -13,22 +16,18 @@ import org.apache.kafka.common.header.Header
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.springframework.core.io.ClassPathResource
-import java.nio.charset.StandardCharsets
-import java.security.SecureRandom
-import java.util.Random
-import java.util.function.Consumer
 
 class MessageSignerTest {
 
-    private val messageSignerProperties = MessageSigningProperties(
-        signingEnabled = true,
-        stripAvroHeader = true,
-        signatureAlgorithm = "SHA256withRSA",
-        signatureProvider = "SunRsaSign",
-        keyAlgorithm = "RSA",
-        privateKeyFile = ClassPathResource("/rsa-private.pem"),
-        publicKeyFile = ClassPathResource("/rsa-public.pem")
-    )
+    private val messageSignerProperties =
+        MessageSigningProperties(
+            signingEnabled = true,
+            stripAvroHeader = true,
+            signatureAlgorithm = "SHA256withRSA",
+            signatureProvider = "SunRsaSign",
+            keyAlgorithm = "RSA",
+            privateKeyFile = ClassPathResource("/rsa-private.pem"),
+            publicKeyFile = ClassPathResource("/rsa-public.pem"))
 
     private val messageSigner = MessageSigner(messageSignerProperties)
 
@@ -121,7 +120,7 @@ class MessageSignerTest {
         val randomSignature = this.randomSignature()
         val messageWrapper = this.messageWrapper(randomSignature)
 
-        val validSignature =messageSigner.verifyUsingField(messageWrapper)
+        val validSignature = messageSigner.verifyUsingField(messageWrapper)
 
         assertThat(validSignature).isFalse()
     }
@@ -182,9 +181,7 @@ class MessageSignerTest {
     private fun <K, V> producerRecordToConsumerRecord(producerRecord: ProducerRecord<K, V>): ConsumerRecord<K, V> {
         val consumerRecord =
             ConsumerRecord(producerRecord.topic(), 0, 123L, producerRecord.key(), producerRecord.value())
-        producerRecord.headers().forEach(Consumer { header: Header? ->
-            consumerRecord.headers().add(header)
-        })
+        producerRecord.headers().forEach(Consumer { header: Header? -> consumerRecord.headers().add(header) })
         return consumerRecord
     }
 
@@ -214,7 +211,8 @@ class MessageSignerTest {
 
         override fun getSchema(): Schema {
             return Schema.Parser()
-                .parse("""{"type":"record","name":"Message","namespace":"com.alliander.osgp.kafka.message.signing","fields":[{"name":"message","type":{"type":"string","avro.java.string":"String"}}]}""")
+                .parse(
+                    """{"type":"record","name":"Message","namespace":"com.alliander.osgp.kafka.message.signing","fields":[{"name":"message","type":{"type":"string","avro.java.string":"String"}}]}""")
         }
 
         override fun get(field: Int): Any {

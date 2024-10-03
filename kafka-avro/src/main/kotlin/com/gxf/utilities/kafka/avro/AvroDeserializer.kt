@@ -1,8 +1,6 @@
-/*
-SPDX-FileCopyrightText: Contributors to the GXF project
-
-SPDX-License-Identifier: Apache-2.0
-*/
+// SPDX-FileCopyrightText: Copyright Contributors to the GXF project
+//
+// SPDX-License-Identifier: Apache-2.0
 package com.gxf.utilities.kafka.avro
 
 import org.apache.avro.Schema
@@ -21,14 +19,11 @@ class AvroDeserializer(deserializerSchemas: List<Schema>) : Deserializer<Specifi
     private val decoder = BinaryMessageDecoder<SpecificRecordBase>(SpecificData(), null)
 
     init {
-        // Add all schema's to the decoder
-        deserializerSchemas
-            .forEach { decoder.addSchema(it) }
+        // Add all schemas to the decoder
+        deserializerSchemas.forEach { decoder.addSchema(it) }
     }
 
-    /**
-     * Deserializes a Byte Array to an Avro SpecificRecordBase
-     */
+    /** Deserializes a Byte Array to an Avro SpecificRecordBase */
     override fun deserialize(topic: String, payload: ByteArray): SpecificRecordBase {
         try {
             logger.trace("Deserializing for {}", topic)
@@ -38,4 +33,3 @@ class AvroDeserializer(deserializerSchemas: List<Schema>) : Deserializer<Specifi
         }
     }
 }
-
