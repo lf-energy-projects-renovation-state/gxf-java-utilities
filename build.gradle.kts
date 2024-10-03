@@ -59,6 +59,8 @@ subprojects {
         }
     }
 
+    tasks.register<DependencyReportTask>("dependenciesAll"){ group = "help" }
+
     tasks.withType<Test> {
         useJUnitPlatform()
     }
