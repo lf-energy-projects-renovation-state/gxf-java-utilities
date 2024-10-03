@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: Copyright Contributors to the GXF project
+//
+// SPDX-License-Identifier: Apache-2.0
 package com.gxf.utilities.kafka.message.signing
 
 import org.assertj.core.api.Assertions.assertThat
@@ -13,8 +16,7 @@ import org.springframework.test.context.TestPropertySource
 @EnableConfigurationProperties(MessageSigningProperties::class)
 @TestPropertySource("classpath:/application.yaml")
 class MessageSigningAutoConfigurationTest {
-    @Autowired
-    private lateinit var messageSigner: MessageSigner
+    @Autowired private lateinit var messageSigner: MessageSigner
 
     @Test
     fun autoConfigurationIntegrationTest() {

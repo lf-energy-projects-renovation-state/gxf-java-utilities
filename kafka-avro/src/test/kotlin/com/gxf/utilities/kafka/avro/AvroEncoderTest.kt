@@ -1,11 +1,13 @@
+// SPDX-FileCopyrightText: Copyright Contributors to the GXF project
+//
+// SPDX-License-Identifier: Apache-2.0
 package com.gxf.utilities.kafka.avro
 
 import com.alliander.gxf.utilities.kafka.avro.AvroSchema1
 import com.alliander.gxf.utilities.kafka.avro.AvroSchema2
-import org.assertj.core.api.AbstractIntegerAssert
+import java.io.ByteArrayOutputStream
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
-import java.io.ByteArrayOutputStream
 
 class AvroEncoderTest {
     @Test

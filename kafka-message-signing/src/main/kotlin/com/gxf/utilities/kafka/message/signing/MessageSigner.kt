@@ -1,11 +1,17 @@
 // SPDX-FileCopyrightText: Copyright Contributors to the GXF project
 //
 // SPDX-License-Identifier: Apache-2.0
-
 package com.gxf.utilities.kafka.message.signing
 
 import com.gxf.utilities.kafka.avro.AvroEncoder
 import com.gxf.utilities.kafka.message.wrapper.SignableMessageWrapper
+import java.io.IOException
+import java.io.UncheckedIOException
+import java.nio.charset.StandardCharsets
+import java.security.*
+import java.security.spec.X509EncodedKeySpec
+import java.util.*
+import java.util.regex.Pattern
 import org.apache.avro.specific.SpecificRecordBase
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.apache.kafka.clients.producer.ProducerRecord
@@ -15,13 +21,6 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.boot.ssl.pem.PemContent
 import org.springframework.core.io.Resource
 import org.springframework.stereotype.Component
-import java.io.IOException
-import java.io.UncheckedIOException
-import java.nio.charset.StandardCharsets
-import java.security.*
-import java.security.spec.X509EncodedKeySpec
-import java.util.*
-import java.util.regex.Pattern
 
 @Component
 // Only instantiate when no other bean has been configured
@@ -40,7 +39,9 @@ class MessageSigner(properties: MessageSigningProperties) {
 
     init {
         if (properties.signingEnabled) {
-            require(!(signingKey == null && verificationKey == null)) { "A signing key (PrivateKey) or verification key (PublicKey) must be provided" }
+            require(!(signingKey == null && verificationKey == null)) {
+                "A signing key (PrivateKey) or verification key (PublicKey) must be provided"
+            }
         }
     }
 
@@ -52,11 +53,11 @@ class MessageSigner(properties: MessageSigningProperties) {
      * Signs the provided `message`, overwriting an existing signature field inside the message object.
      *
      * @param message the message to be signed
-     * @return Returns the signed (unwrapped) message. If signing is disabled through configuration, the message will be returned unchanged.
-     *
-     * @throws IllegalStateException      if this message signer has a public key for signature
-     * verification, but does not have the private key needed for signing messages.
-     * @throws UncheckedIOException       if determining the bytes for the message throws an IOException.
+     * @return Returns the signed (unwrapped) message. If signing is disabled through configuration, the message will be
+     *   returned unchanged.
+     * @throws IllegalStateException if this message signer has a public key for signature verification, but does not
+     *   have the private key needed for signing messages.
+     * @throws UncheckedIOException if determining the bytes for the message throws an IOException.
      * @throws UncheckedSecurityException if the signing process throws a SignatureException.
      */
     fun <T> signUsingField(message: SignableMessageWrapper<T>): T {
@@ -72,12 +73,14 @@ class MessageSigner(properties: MessageSigningProperties) {
      * already set.
      *
      * @param producerRecord the record to be signed
-     * @throws IllegalStateException      if this message signer has a public key for signature
-     * verification, but does not have the private key needed for signing messages.
-     * @throws UncheckedIOException       if determining the bytes for the message throws an IOException.
+     * @throws IllegalStateException if this message signer has a public key for signature verification, but does not
+     *   have the private key needed for signing messages.
+     * @throws UncheckedIOException if determining the bytes for the message throws an IOException.
      * @throws UncheckedSecurityException if the signing process throws a SignatureException.
      */
-    fun signUsingHeader(producerRecord: ProducerRecord<String, out SpecificRecordBase>): ProducerRecord<String, out SpecificRecordBase> {
+    fun signUsingHeader(
+        producerRecord: ProducerRecord<String, out SpecificRecordBase>
+    ): ProducerRecord<String, out SpecificRecordBase> {
         if (this.signingEnabled) {
             val signature = this.signature(producerRecord)
             producerRecord.headers().add(RECORD_HEADER_KEY_SIGNATURE, signature)
@@ -88,19 +91,20 @@ class MessageSigner(properties: MessageSigningProperties) {
     /**
      * Determines the signature for the given `message`.
      *
-     *
-     * The value for the signature in the message will be set to `null` to properly determine
-     * the signature, but is restored to its original value before this method returns.
+     * The value for the signature in the message will be set to `null` to properly determine the signature, but is
+     * restored to its original value before this method returns.
      *
      * @param message the message to be signed
      * @return the signature for the message
-     * @throws IllegalStateException      if this message signer has a public key for signature
-     * verification, but does not have the private key needed for signing messages.
-     * @throws UncheckedIOException       if determining the bytes for the message throws an IOException.
+     * @throws IllegalStateException if this message signer has a public key for signature verification, but does not
+     *   have the private key needed for signing messages.
+     * @throws UncheckedIOException if determining the bytes for the message throws an IOException.
      * @throws UncheckedSecurityException if the signing process throws a SignatureException.
      */
     private fun signature(message: SignableMessageWrapper<*>): ByteArray {
-        check(this.canSignMessages()) { "This MessageSigner is not configured for signing, it can only be used for verification" }
+        check(this.canSignMessages()) {
+            "This MessageSigner is not configured for signing, it can only be used for verification"
+        }
         val oldSignature = message.getSignature()
         message.setSignature(null)
         val byteArray = this.toByteArray(message)
@@ -116,19 +120,20 @@ class MessageSigner(properties: MessageSigningProperties) {
     /**
      * Determines the signature for the given `producerRecord`.
      *
-     *
-     * The value for the signature in the record will be set to `null` to properly determine
-     * the signature, but is restored to its original value before this method returns.
+     * The value for the signature in the record will be set to `null` to properly determine the signature, but is
+     * restored to its original value before this method returns.
      *
      * @param producerRecord the record to be signed
      * @return the signature for the record
-     * @throws IllegalStateException      if this message signer has a public key for signature
-     * verification, but does not have the private key needed for signing messages.
-     * @throws UncheckedIOException       if determining the bytes throws an IOException.
+     * @throws IllegalStateException if this message signer has a public key for signature verification, but does not
+     *   have the private key needed for signing messages.
+     * @throws UncheckedIOException if determining the bytes throws an IOException.
      * @throws UncheckedSecurityException if the signing process throws a SignatureException.
      */
     private fun signature(producerRecord: ProducerRecord<String, out SpecificRecordBase>): ByteArray {
-        check(this.canSignMessages()) { "This MessageSigner is not configured for signing, it can only be used for verification" }
+        check(this.canSignMessages()) {
+            "This MessageSigner is not configured for signing, it can only be used for verification"
+        }
         val oldSignatureHeader = producerRecord.headers().lastHeader(RECORD_HEADER_KEY_SIGNATURE)
         producerRecord.headers().remove(RECORD_HEADER_KEY_SIGNATURE)
         val specificRecordBase = producerRecord.value()
@@ -145,11 +150,12 @@ class MessageSigner(properties: MessageSigningProperties) {
     }
 
     private fun signature(byteArray: ByteArray): ByteArray {
-        val messageBytes: ByteArray = if (this.stripAvroHeader) {
-            this.stripAvroHeader(byteArray)
-        } else {
-            byteArray
-        }
+        val messageBytes: ByteArray =
+            if (this.stripAvroHeader) {
+                this.stripAvroHeader(byteArray)
+            } else {
+                byteArray
+            }
         val signingSignature = signatureInstance(signatureAlgorithm, signatureProvider, signingKey!!)
         signingSignature.update(messageBytes)
         return signingSignature.sign()
@@ -163,8 +169,7 @@ class MessageSigner(properties: MessageSigningProperties) {
      * Verifies the signature of the provided `message` using the signature in a message field.
      *
      * @param message the message to be verified
-     * @return `true` if the signature of the given `message` was verified; `false`
-     * if not.
+     * @return `true` if the signature of the given `message` was verified; `false` if not.
      */
     fun <T> verifyUsingField(message: SignableMessageWrapper<T>): Boolean {
         if (!this.canVerifyMessageSignatures()) {
@@ -194,9 +199,7 @@ class MessageSigner(properties: MessageSigningProperties) {
      * Verifies the signature of the provided `consumerRecord` using the signature from the message header.
      *
      * @param consumerRecord the record to be verified
-     * @return `true` if the signature of the given `consumerRecord` was verified; `false`
-     * if not.
-     * SignatureException.
+     * @return `true` if the signature of the given `consumerRecord` was verified; `false` if not. SignatureException.
      */
     fun verifyUsingHeader(consumerRecord: ConsumerRecord<String, out SpecificRecordBase>): Boolean {
         if (!this.canVerifyMessageSignatures()) {
@@ -227,20 +230,21 @@ class MessageSigner(properties: MessageSigningProperties) {
 
     @Throws(SignatureException::class)
     private fun verifySignatureBytes(signatureBytes: ByteArray, messageByteArray: ByteArray): Boolean {
-        val messageBytes: ByteArray = if (this.stripAvroHeader) {
-            this.stripAvroHeader(messageByteArray)
-        } else {
-            messageByteArray
-        }
+        val messageBytes: ByteArray =
+            if (this.stripAvroHeader) {
+                this.stripAvroHeader(messageByteArray)
+            } else {
+                messageByteArray
+            }
         val verificationSignature = signatureInstance(signatureAlgorithm, signatureProvider, verificationKey!!)
         verificationSignature.update(messageBytes)
         return verificationSignature.verify(signatureBytes)
     }
 
     private fun hasAvroHeader(bytes: ByteArray): Boolean {
-        return (bytes.size >= AVRO_HEADER_LENGTH)
-                && ((bytes[0].toInt() and 0xFF) == 0xC3)
-                && ((bytes[1].toInt() and 0xFF) == 0x01)
+        return (bytes.size >= AVRO_HEADER_LENGTH) &&
+            ((bytes[0].toInt() and 0xFF) == 0xC3) &&
+            ((bytes[1].toInt() and 0xFF) == 0x01)
     }
 
     private fun stripAvroHeader(bytes: ByteArray): ByteArray {
@@ -273,8 +277,7 @@ class MessageSigner(properties: MessageSigningProperties) {
             this.keyAlgorithm,
             this.signatureProvider,
             this.canSignMessages(),
-            this.canVerifyMessageSignatures()
-        )
+            this.canVerifyMessageSignatures())
     }
 
     companion object {
@@ -360,5 +363,4 @@ class MessageSigner(properties: MessageSigningProperties) {
             }
         }
     }
-
 }

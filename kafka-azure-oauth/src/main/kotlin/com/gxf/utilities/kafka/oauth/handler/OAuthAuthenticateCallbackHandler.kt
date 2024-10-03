@@ -1,13 +1,18 @@
-/*
-SPDX-FileCopyrightText: Contributors to the GXF project
-
-SPDX-License-Identifier: Apache-2.0
-*/
+// SPDX-FileCopyrightText: Copyright Contributors to the GXF project
+//
+// SPDX-License-Identifier: Apache-2.0
 package com.gxf.utilities.kafka.oauth.handler
 
 import com.microsoft.aad.msal4j.ClientCredentialFactory
 import com.microsoft.aad.msal4j.ClientCredentialParameters
 import com.microsoft.aad.msal4j.ConfidentialClientApplication
+import java.io.File
+import java.io.IOException
+import java.nio.charset.StandardCharsets
+import java.nio.file.Files
+import javax.security.auth.callback.Callback
+import javax.security.auth.callback.UnsupportedCallbackException
+import javax.security.auth.login.AppConfigurationEntry
 import org.apache.kafka.common.config.ConfigException
 import org.apache.kafka.common.security.auth.AuthenticateCallbackHandler
 import org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule
@@ -16,13 +21,6 @@ import org.apache.kafka.common.security.oauthbearer.OAuthBearerTokenCallback
 import org.apache.kafka.common.security.oauthbearer.OAuthBearerValidatorCallback
 import org.apache.kafka.common.security.oauthbearer.internals.secured.BasicOAuthBearerToken
 import org.slf4j.LoggerFactory
-import java.io.File
-import java.io.IOException
-import java.nio.charset.StandardCharsets
-import java.nio.file.Files
-import javax.security.auth.callback.Callback
-import javax.security.auth.callback.UnsupportedCallbackException
-import javax.security.auth.login.AppConfigurationEntry
 
 class OAuthAuthenticateCallbackHandler : AuthenticateCallbackHandler {
     internal lateinit var tokenFilePath: String
@@ -44,13 +42,10 @@ class OAuthAuthenticateCallbackHandler : AuthenticateCallbackHandler {
         saslMechanism: String,
         jaasConfigEntries: List<AppConfigurationEntry>
     ) {
-        getOptions(saslMechanism, jaasConfigEntries)
-            .let { setFields(it) }
+        getOptions(saslMechanism, jaasConfigEntries).let { setFields(it) }
     }
 
-    private fun getOptions(
-        saslMechanism: String, jaasConfigEntries: List<AppConfigurationEntry>
-    ): Map<String, Any?> {
+    private fun getOptions(saslMechanism: String, jaasConfigEntries: List<AppConfigurationEntry>): Map<String, Any?> {
         require(saslMechanism == OAuthBearerLoginModule.OAUTHBEARER_MECHANISM) {
             "Unexpected SASL mechanism: ${saslMechanism}"
         }
@@ -63,10 +58,7 @@ class OAuthAuthenticateCallbackHandler : AuthenticateCallbackHandler {
     private fun setFields(options: Map<String, Any?>) {
         clientId = options.getProperty(CLIENT_ID_CONFIG)
         tokenEndpoint = options.getProperty(TOKEN_ENDPOINT_CONFIG)
-        scopes = options.getProperty(SCOPE_CONFIG)
-            .split(",".toRegex())
-            .dropLastWhile { it.isEmpty() }
-            .toSet()
+        scopes = options.getProperty(SCOPE_CONFIG).split(",".toRegex()).dropLastWhile { it.isEmpty() }.toSet()
         tokenFilePath = options.getProperty(TOKEN_FILE_CONFIG)
     }
 
@@ -89,8 +81,7 @@ class OAuthAuthenticateCallbackHandler : AuthenticateCallbackHandler {
                 is OAuthBearerTokenCallback -> callback.token(getToken())
                 is OAuthBearerValidatorCallback ->
                     throw UnsupportedCallbackException(callback, "Validate callback not yet implemented")
-                else ->
-                    throw UnsupportedCallbackException(callback, "Unknown callback type ${callback.javaClass.name}")
+                else -> throw UnsupportedCallbackException(callback, "Unknown callback type ${callback.javaClass.name}")
             }
         }
     }
@@ -102,9 +93,7 @@ class OAuthAuthenticateCallbackHandler : AuthenticateCallbackHandler {
             val token = readTokenFile(tokenFilePath)
             val credential = ClientCredentialFactory.createFromClientAssertion(token)
             val aadParameters = ClientCredentialParameters.builder(scopes).build()
-            val aadClient = ConfidentialClientApplication.builder(clientId, credential)
-                .authority(tokenEndpoint)
-                .build()
+            val aadClient = ConfidentialClientApplication.builder(clientId, credential).authority(tokenEndpoint).build()
             val authResult = aadClient.acquireToken(aadParameters).get()
 
             return BasicOAuthBearerToken(
@@ -112,8 +101,7 @@ class OAuthAuthenticateCallbackHandler : AuthenticateCallbackHandler {
                 aadParameters.scopes(),
                 authResult.expiresOnDate().toInstant().toEpochMilli(),
                 aadClient.clientId(),
-                System.currentTimeMillis()
-            )
+                System.currentTimeMillis())
         } catch (e: InterruptedException) {
             Thread.currentThread().interrupt()
             throw KafkaOAuthException("Retrieving JWT token was interrupted", e)

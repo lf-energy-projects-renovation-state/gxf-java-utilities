@@ -1,12 +1,15 @@
+// SPDX-FileCopyrightText: Copyright Contributors to the GXF project
+//
+// SPDX-License-Identifier: Apache-2.0
 package com.gxf.utilities.kafka.avro
 
+import java.io.IOException
+import java.io.OutputStream
+import kotlin.reflect.KClass
 import org.apache.avro.message.BinaryMessageEncoder
 import org.apache.avro.specific.SpecificData
 import org.apache.avro.specific.SpecificRecordBase
 import org.slf4j.LoggerFactory
-import java.io.IOException
-import java.io.OutputStream
-import kotlin.reflect.KClass
 
 object AvroEncoder {
     val encoders: HashMap<KClass<out SpecificRecordBase>, BinaryMessageEncoder<SpecificRecordBase>> = HashMap()
@@ -31,7 +34,7 @@ object AvroEncoder {
     private fun getEncoder(message: SpecificRecordBase): BinaryMessageEncoder<SpecificRecordBase> {
         val existingEncoder = encoders[message::class]
 
-        if(existingEncoder != null) {
+        if (existingEncoder != null) {
             return existingEncoder
         }
 
