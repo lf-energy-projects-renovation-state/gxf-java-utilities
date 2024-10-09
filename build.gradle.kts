@@ -6,10 +6,10 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import java.net.URI
 
 plugins {
-    id("io.spring.dependency-management") version "1.1.5" apply false
-    kotlin("jvm") version "2.0.0" apply false
-    kotlin("plugin.spring") version "2.0.0" apply false
-    id("org.sonarqube") version "5.0.0.4638"
+    id("io.spring.dependency-management") version "1.1.6" apply false
+    kotlin("jvm") version "2.0.20" apply false
+    kotlin("plugin.spring") version "2.0.20" apply false
+    id("org.sonarqube") version "5.1.0.4882"
     id("com.diffplug.spotless") version("6.25.0")
 }
 
@@ -45,7 +45,7 @@ subprojects {
 
     extensions.configure<StandardDependencyManagementExtension> {
         imports {
-            mavenBom("org.springframework.boot:spring-boot-dependencies:3.3.1")
+            mavenBom("org.springframework.boot:spring-boot-dependencies:3.3.4")
         }
     }
 
@@ -62,7 +62,6 @@ subprojects {
             freeCompilerArgs = listOf("-Xjsr305=strict")
         }
     }
-
 
     extensions.configure<SpotlessExtension> {
         kotlin {
@@ -94,6 +93,11 @@ subprojects {
                 from(components.getByName("java"))
             }
         }
+    }
+
+    tasks.register<DependencyReportTask>("dependenciesAll"){
+        description = "Displays all dependencies declared in all sub projects"
+        group = "help"
     }
 
     tasks.withType<Test> {

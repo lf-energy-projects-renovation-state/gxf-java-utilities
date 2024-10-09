@@ -4,7 +4,7 @@
 
 
 plugins {
-    id("org.gradle.toolchains.foojay-resolver-convention") version "0.7.0"
+    id("org.gradle.toolchains.foojay-resolver-convention") version "0.8.0"
 }
 
 rootProject.name = "gxf-java-utilities"
@@ -18,14 +18,14 @@ dependencyResolutionManagement {
     versionCatalogs {
         create("libs") {
             version("avro", "1.12.0")
-            version("msal4j", "1.16.1")
+            version("msal4j", "1.17.2")
 
             library("avro", "org.apache.avro", "avro").versionRef("avro")
             library("msal", "com.microsoft.azure", "msal4j").versionRef("msal4j")
         }
 
         create("testLibs") {
-            version("mockitoKotlin", "5.1.0")
+            version("mockitoKotlin", "5.4.0")
             version("mockServer", "5.15.0")
 
             library("mockitoKotlin", "org.mockito.kotlin", "mockito-kotlin").versionRef("mockitoKotlin")
