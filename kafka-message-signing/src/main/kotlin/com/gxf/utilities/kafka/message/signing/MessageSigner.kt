@@ -108,9 +108,9 @@ class MessageSigner(properties: MessageSigningProperties) {
         }
         val oldSignature = message.getSignature()
         message.setSignature(null)
-        val byteArray = this.toByteBuffer(message)
+        val byteBuffer = this.toByteBuffer(message)
         try {
-            return signature(byteArray)
+            return signature(byteBuffer)
         } catch (e: SignatureException) {
             throw UncheckedSecurityException("Unable to sign message", e)
         } finally {
@@ -138,9 +138,9 @@ class MessageSigner(properties: MessageSigningProperties) {
         val oldSignatureHeader = producerRecord.headers().lastHeader(RECORD_HEADER_KEY_SIGNATURE)
         producerRecord.headers().remove(RECORD_HEADER_KEY_SIGNATURE)
         val specificRecordBase = producerRecord.value()
-        val byteArray = this.toByteBuffer(specificRecordBase)
+        val byteBuffer = this.toByteBuffer(specificRecordBase)
         try {
-            return signature(byteArray)
+            return signature(byteBuffer)
         } catch (e: SignatureException) {
             throw UncheckedSecurityException("Unable to sign message", e)
         } finally {
@@ -230,12 +230,12 @@ class MessageSigner(properties: MessageSigningProperties) {
     }
 
     @Throws(SignatureException::class)
-    private fun verifySignatureBytes(signatureBytes: ByteBuffer, messageByteArray: ByteBuffer): Boolean {
+    private fun verifySignatureBytes(signatureBytes: ByteBuffer, messageByteBuffer: ByteBuffer): Boolean {
         val messageBytes: ByteBuffer =
             if (this.stripAvroHeader) {
-                this.stripAvroHeader(messageByteArray)
+                this.stripAvroHeader(messageByteBuffer)
             } else {
-                messageByteArray
+                messageByteBuffer
             }
         val verificationSignature = signatureInstance(signatureAlgorithm, signatureProvider, verificationKey!!)
         verificationSignature.update(messageBytes)
