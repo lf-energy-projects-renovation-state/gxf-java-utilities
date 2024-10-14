@@ -7,6 +7,7 @@ import com.gxf.utilities.kafka.avro.AvroEncoder
 import com.gxf.utilities.kafka.message.wrapper.SignableMessageWrapper
 import java.io.IOException
 import java.io.UncheckedIOException
+import java.nio.ByteBuffer
 import java.nio.charset.StandardCharsets
 import java.security.*
 import java.security.spec.X509EncodedKeySpec
@@ -83,7 +84,7 @@ class MessageSigner(properties: MessageSigningProperties) {
     ): ProducerRecord<String, out SpecificRecordBase> {
         if (this.signingEnabled) {
             val signature = this.signature(producerRecord)
-            producerRecord.headers().add(RECORD_HEADER_KEY_SIGNATURE, signature)
+            producerRecord.headers().add(RECORD_HEADER_KEY_SIGNATURE, signature.array())
         }
         return producerRecord
     }
@@ -101,13 +102,13 @@ class MessageSigner(properties: MessageSigningProperties) {
      * @throws UncheckedIOException if determining the bytes for the message throws an IOException.
      * @throws UncheckedSecurityException if the signing process throws a SignatureException.
      */
-    private fun signature(message: SignableMessageWrapper<*>): ByteArray {
+    private fun signature(message: SignableMessageWrapper<*>): ByteBuffer {
         check(this.canSignMessages()) {
             "This MessageSigner is not configured for signing, it can only be used for verification"
         }
         val oldSignature = message.getSignature()
         message.setSignature(null)
-        val byteArray = this.toByteArray(message)
+        val byteArray = this.toByteBuffer(message)
         try {
             return signature(byteArray)
         } catch (e: SignatureException) {
@@ -130,14 +131,14 @@ class MessageSigner(properties: MessageSigningProperties) {
      * @throws UncheckedIOException if determining the bytes throws an IOException.
      * @throws UncheckedSecurityException if the signing process throws a SignatureException.
      */
-    private fun signature(producerRecord: ProducerRecord<String, out SpecificRecordBase>): ByteArray {
+    private fun signature(producerRecord: ProducerRecord<String, out SpecificRecordBase>): ByteBuffer {
         check(this.canSignMessages()) {
             "This MessageSigner is not configured for signing, it can only be used for verification"
         }
         val oldSignatureHeader = producerRecord.headers().lastHeader(RECORD_HEADER_KEY_SIGNATURE)
         producerRecord.headers().remove(RECORD_HEADER_KEY_SIGNATURE)
         val specificRecordBase = producerRecord.value()
-        val byteArray = this.toByteArray(specificRecordBase)
+        val byteArray = this.toByteBuffer(specificRecordBase)
         try {
             return signature(byteArray)
         } catch (e: SignatureException) {
@@ -149,16 +150,16 @@ class MessageSigner(properties: MessageSigningProperties) {
         }
     }
 
-    private fun signature(byteArray: ByteArray): ByteArray {
-        val messageBytes: ByteArray =
+    private fun signature(byteBuffer: ByteBuffer): ByteBuffer {
+        val messageBytes: ByteBuffer =
             if (this.stripAvroHeader) {
-                this.stripAvroHeader(byteArray)
+                this.stripAvroHeader(byteBuffer)
             } else {
-                byteArray
+                byteBuffer
             }
         val signingSignature = signatureInstance(signatureAlgorithm, signatureProvider, signingKey!!)
         signingSignature.update(messageBytes)
-        return signingSignature.sign()
+        return ByteBuffer.wrap(signingSignature.sign())
     }
 
     fun canVerifyMessageSignatures(): Boolean {
@@ -179,14 +180,14 @@ class MessageSigner(properties: MessageSigningProperties) {
 
         val messageSignature = message.getSignature()
 
-        if (messageSignature == null || messageSignature.isEmpty()) {
+        if (messageSignature == null) {
             logger.error("This message does not contain a signature")
             return false
         }
 
         try {
             message.setSignature(null)
-            return this.verifySignatureBytes(messageSignature, this.toByteArray(message))
+            return this.verifySignatureBytes(messageSignature, this.toByteBuffer(message))
         } catch (e: Exception) {
             logger.error("Unable to verify message signature", e)
             return false
@@ -221,7 +222,7 @@ class MessageSigner(properties: MessageSigningProperties) {
 
         try {
             val specificRecordBase: SpecificRecordBase = consumerRecord.value()
-            return this.verifySignatureBytes(signatureBytes, this.toByteArray(specificRecordBase))
+            return this.verifySignatureBytes(ByteBuffer.wrap(signatureBytes), this.toByteBuffer(specificRecordBase))
         } catch (e: Exception) {
             logger.error("Unable to verify message signature", e)
             return false
@@ -229,8 +230,8 @@ class MessageSigner(properties: MessageSigningProperties) {
     }
 
     @Throws(SignatureException::class)
-    private fun verifySignatureBytes(signatureBytes: ByteArray, messageByteArray: ByteArray): Boolean {
-        val messageBytes: ByteArray =
+    private fun verifySignatureBytes(signatureBytes: ByteBuffer, messageByteArray: ByteBuffer): Boolean {
+        val messageBytes: ByteBuffer =
             if (this.stripAvroHeader) {
                 this.stripAvroHeader(messageByteArray)
             } else {
@@ -238,33 +239,33 @@ class MessageSigner(properties: MessageSigningProperties) {
             }
         val verificationSignature = signatureInstance(signatureAlgorithm, signatureProvider, verificationKey!!)
         verificationSignature.update(messageBytes)
-        return verificationSignature.verify(signatureBytes)
+        return verificationSignature.verify(signatureBytes.array())
     }
 
-    private fun hasAvroHeader(bytes: ByteArray): Boolean {
-        return (bytes.size >= AVRO_HEADER_LENGTH) &&
+    private fun hasAvroHeader(bytes: ByteBuffer): Boolean {
+        return (bytes.array().size >= AVRO_HEADER_LENGTH) &&
             ((bytes[0].toInt() and 0xFF) == 0xC3) &&
             ((bytes[1].toInt() and 0xFF) == 0x01)
     }
 
-    private fun stripAvroHeader(bytes: ByteArray): ByteArray {
+    private fun stripAvroHeader(bytes: ByteBuffer): ByteBuffer {
         if (this.hasAvroHeader(bytes)) {
-            return Arrays.copyOfRange(bytes, AVRO_HEADER_LENGTH, bytes.size)
+            return ByteBuffer.wrap(Arrays.copyOfRange(bytes.array(), AVRO_HEADER_LENGTH, bytes.array().size))
         }
         return bytes
     }
 
-    private fun toByteArray(message: SignableMessageWrapper<*>): ByteArray {
+    private fun toByteBuffer(message: SignableMessageWrapper<*>): ByteBuffer {
         try {
-            return message.toByteArray()
+            return message.toByteBuffer()
         } catch (e: IOException) {
             throw UncheckedIOException("Unable to determine bytes for message", e)
         }
     }
 
-    private fun toByteArray(message: SpecificRecordBase): ByteArray {
+    private fun toByteBuffer(message: SpecificRecordBase): ByteBuffer {
         try {
-            return AvroEncoder.encode(message)
+            return ByteBuffer.wrap(AvroEncoder.encode(message))
         } catch (e: IOException) {
             throw UncheckedIOException("Unable to determine bytes for message", e)
         }

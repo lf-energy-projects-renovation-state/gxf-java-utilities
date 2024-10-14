@@ -4,6 +4,7 @@
 package com.gxf.utilities.kafka.message.wrapper
 
 import java.io.IOException
+import java.nio.ByteBuffer
 
 /**
  * Wrapper for signable messages. Because these messages are generated from Avro schemas, they can't be changed. This
@@ -11,12 +12,12 @@ import java.io.IOException
  */
 abstract class SignableMessageWrapper<T>(val message: T) {
 
-    /** @return ByteArray of the whole message */
-    @Throws(IOException::class) abstract fun toByteArray(): ByteArray
+    /** @return ByteBuffer of the whole message */
+    @Throws(IOException::class) abstract fun toByteBuffer(): ByteBuffer
 
-    /** @return ByteArray of the signature in the message */
-    abstract fun getSignature(): ByteArray?
+    /** @return ByteBuffer of the signature in the message */
+    abstract fun getSignature(): ByteBuffer?
 
-    /** @param signature The signature in ByteArray form to be set on the message */
-    abstract fun setSignature(signature: ByteArray?)
+    /** @param signature The signature in ByteBuffer form to be set on the message */
+    abstract fun setSignature(signature: ByteBuffer?)
 }
