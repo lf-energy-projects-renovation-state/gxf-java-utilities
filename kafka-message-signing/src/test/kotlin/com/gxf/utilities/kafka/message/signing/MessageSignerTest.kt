@@ -4,6 +4,7 @@
 package com.gxf.utilities.kafka.message.signing
 
 import com.gxf.utilities.kafka.message.wrapper.SignableMessageWrapper
+import java.nio.ByteBuffer
 import java.nio.charset.StandardCharsets
 import java.security.SecureRandom
 import java.util.Random
@@ -68,10 +69,10 @@ class MessageSignerTest {
     fun signsRecordHeaderReplacingSignature() {
         val randomSignature = this.randomSignature()
         val record = this.producerRecord()
-        record.headers().add(MessageSigner.RECORD_HEADER_KEY_SIGNATURE, randomSignature)
+        record.headers().add(MessageSigner.RECORD_HEADER_KEY_SIGNATURE, randomSignature.array())
 
         val actualSignatureBefore = record.headers().lastHeader(MessageSigner.RECORD_HEADER_KEY_SIGNATURE).value()
-        assertThat(actualSignatureBefore).isNotNull().isEqualTo(randomSignature)
+        assertThat(actualSignatureBefore).isNotNull().isEqualTo(randomSignature.array())
 
         messageSigner.signUsingHeader(record)
 
@@ -129,7 +130,7 @@ class MessageSignerTest {
     fun doesNotVerifyRecordsWithIncorrectSignature() {
         val consumerRecord = this.consumerRecord()
         val randomSignature = this.randomSignature()
-        consumerRecord.headers().add(MessageSigner.RECORD_HEADER_KEY_SIGNATURE, randomSignature)
+        consumerRecord.headers().add(MessageSigner.RECORD_HEADER_KEY_SIGNATURE, randomSignature.array())
 
         val validSignature = messageSigner.verifyUsingHeader(consumerRecord)
 
@@ -160,7 +161,7 @@ class MessageSignerTest {
         return TestableWrapper()
     }
 
-    private fun messageWrapper(signature: ByteArray): TestableWrapper {
+    private fun messageWrapper(signature: ByteBuffer): TestableWrapper {
         val testableWrapper = TestableWrapper()
         testableWrapper.setSignature(signature)
         return testableWrapper
@@ -185,14 +186,14 @@ class MessageSignerTest {
         return consumerRecord
     }
 
-    private fun randomSignature(): ByteArray {
+    private fun randomSignature(): ByteBuffer {
         val random: Random = SecureRandom()
         val keySize = 2048
 
         val signature = ByteArray(keySize / 8)
         random.nextBytes(signature)
 
-        return signature
+        return ByteBuffer.wrap(signature)
     }
 
     private fun producerRecord(): ProducerRecord<String, Message> {
@@ -225,17 +226,17 @@ class MessageSignerTest {
     }
 
     private class TestableWrapper : SignableMessageWrapper<String>("Some test message") {
-        private var signature: ByteArray? = null
+        private var signature: ByteBuffer? = null
 
-        override fun toByteArray(): ByteArray {
-            return message.toByteArray(StandardCharsets.UTF_8)
+        override fun toByteBuffer(): ByteBuffer {
+            return ByteBuffer.wrap(message.toByteArray(StandardCharsets.UTF_8))
         }
 
-        override fun getSignature(): ByteArray? {
+        override fun getSignature(): ByteBuffer? {
             return this.signature
         }
 
-        override fun setSignature(signature: ByteArray?) {
+        override fun setSignature(signature: ByteBuffer?) {
             this.signature = signature
         }
     }
