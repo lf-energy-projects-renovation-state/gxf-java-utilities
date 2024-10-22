@@ -8,7 +8,7 @@ import java.net.URI
 plugins {
     id("io.spring.dependency-management") version "1.1.6" apply false
     kotlin("jvm") version "2.0.21" apply false
-    kotlin("plugin.spring") version "2.0.20" apply false
+    kotlin("plugin.spring") version "2.0.21" apply false
     id("org.sonarqube") version "5.1.0.4882"
     id("com.diffplug.spotless") version("6.25.0")
 }
