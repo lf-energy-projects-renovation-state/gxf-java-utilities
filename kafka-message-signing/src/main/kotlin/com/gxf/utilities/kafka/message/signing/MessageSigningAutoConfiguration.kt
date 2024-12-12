@@ -12,9 +12,9 @@ import org.springframework.context.annotation.Configuration
 @Configuration
 @EnableConfigurationProperties(MessageSigningProperties::class)
 @ComponentScan("com.gxf.utilities.kafka.message.signing")
-// Only instantiate when no other bean has been configured
-@ConditionalOnMissingBean(MessageSigner::class)
 class MessageSigningAutoConfiguration {
+    // Only instantiate when no other bean has been configured
+    @ConditionalOnMissingBean
     @Bean
     fun messageSigner(signingProperties: MessageSigningProperties): MessageSigner {
         return MessageSigner(signingProperties)
