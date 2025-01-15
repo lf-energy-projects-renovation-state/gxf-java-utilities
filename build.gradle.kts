@@ -10,7 +10,7 @@ plugins {
     kotlin("jvm") version "2.1.0" apply false
     kotlin("plugin.spring") version "2.1.0" apply false
     id("org.sonarqube") version "6.0.1.5171"
-    id("com.diffplug.spotless") version("6.25.0")
+    id("com.diffplug.spotless") version("7.0.2")
 }
 
 sonar {
