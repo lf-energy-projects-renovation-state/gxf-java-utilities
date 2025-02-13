@@ -18,7 +18,7 @@ testing {
             useJUnitJupiter()
             dependencies {
                 implementation(project())
-                implementation("org.springframework.boot:spring-boot-starter-test")
+                implementation(libs.springBootStarterTest)
                 implementation(libs.mockServer) {
                     // CVE fixes
                     exclude(group = "org.bouncycastle", module = "bcpkix-jdk18on")

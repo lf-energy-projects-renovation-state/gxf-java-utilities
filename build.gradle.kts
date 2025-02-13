@@ -6,11 +6,11 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import java.net.URI
 
 plugins {
-    id("io.spring.dependency-management") version "1.1.7" apply false
-    kotlin("jvm") version "2.1.10" apply false
-    kotlin("plugin.spring") version "2.1.10" apply false
-    id("org.sonarqube") version "6.0.1.5171"
-    id("com.diffplug.spotless") version("6.25.0")
+    alias(libs.plugins.dependencyManagement) apply false
+    alias(libs.plugins.kotlin) apply false
+    alias(libs.plugins.spring) apply false
+    alias(libs.plugins.sonarqube)
+    alias(libs.plugins.spotless)
 }
 
 sonar {
@@ -28,13 +28,13 @@ version = System.getenv("GITHUB_REF_NAME")
         ?: "develop"
 
 subprojects {
-    apply(plugin = "org.jetbrains.kotlin.jvm")
-    apply(plugin = "org.jetbrains.kotlin.plugin.spring")
-    apply(plugin = "io.spring.dependency-management")
-    apply(plugin = "org.gradle.maven-publish")
-    apply(plugin = "jacoco")
-    apply(plugin = "jacoco-report-aggregation")
-    apply(plugin = "com.diffplug.spotless")
+    apply(plugin = rootProject.libs.plugins.kotlin.get().pluginId)
+    apply(plugin = rootProject.libs.plugins.spring.get().pluginId)
+    apply(plugin = rootProject.libs.plugins.dependencyManagement.get().pluginId)
+    apply(plugin = rootProject.libs.plugins.mavenPublish.get().pluginId)
+    apply(plugin = rootProject.libs.plugins.spotless.get().pluginId)
+    apply(plugin = rootProject.libs.plugins.jacoco.get().pluginId)
+    apply(plugin = rootProject.libs.plugins.jacocoReportAggregation.get().pluginId)
 
     group = rootProject.group
     version = rootProject.version
