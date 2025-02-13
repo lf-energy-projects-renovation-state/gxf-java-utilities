@@ -2,21 +2,21 @@ import com.github.davidmc24.gradle.plugin.avro.GenerateAvroJavaTask
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
-    id("com.github.davidmc24.gradle.plugin.avro") version "1.9.1"
+    alias(libs.plugins.avro)
 }
 
 dependencies {
-    implementation("org.apache.kafka:kafka-clients")
+    implementation(libs.kafkaClients)
     implementation(libs.avro)
 
-    implementation("org.slf4j:slf4j-api")
+    implementation(libs.slf4jApi)
 
-    testImplementation("org.junit.jupiter:junit-jupiter-api")
-    testImplementation("org.junit.jupiter:junit-jupiter-engine")
+    testImplementation(libs.junitJupiterApi)
+    testImplementation(libs.junitJupiterEngine)
 
-    testImplementation("org.assertj:assertj-core")
+    testImplementation(libs.assertJ)
 
-    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+    testRuntimeOnly(libs.junitPlatformLauncher)
 }
 
 tasks.withType<KotlinCompile> {

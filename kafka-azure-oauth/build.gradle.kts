@@ -1,13 +1,13 @@
 dependencies {
-    implementation("org.apache.kafka:kafka-clients")
+    implementation(libs.kafkaClients)
     implementation(libs.msal)
 
-    implementation("org.slf4j:slf4j-api")
+    implementation(libs.slf4jApi)
 
-    testImplementation("org.junit.jupiter:junit-jupiter-api")
-    testImplementation("org.junit.jupiter:junit-jupiter-engine")
+    testImplementation(libs.junitJupiterApi)
+    testImplementation(libs.junitJupiterEngine)
 
-    testImplementation("org.assertj:assertj-core")
+    testImplementation(libs.assertJ)
 
-    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+    testRuntimeOnly(libs.junitPlatformLauncher)
 }
