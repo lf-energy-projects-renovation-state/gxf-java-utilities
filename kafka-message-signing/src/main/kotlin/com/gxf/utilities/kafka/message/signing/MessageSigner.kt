@@ -278,7 +278,8 @@ class MessageSigner(properties: MessageSigningProperties) {
             this.keyAlgorithm,
             this.signatureProvider,
             this.canSignMessages(),
-            this.canVerifyMessageSignatures())
+            this.canVerifyMessageSignatures(),
+        )
     }
 
     companion object {
@@ -299,7 +300,7 @@ class MessageSigner(properties: MessageSigningProperties) {
         private fun signatureInstance(
             signatureAlgorithm: String,
             signatureProvider: String?,
-            signingKey: PrivateKey
+            signingKey: PrivateKey,
         ): Signature {
             val signature = signatureInstance(signatureAlgorithm, signatureProvider)
             try {
@@ -314,7 +315,7 @@ class MessageSigner(properties: MessageSigningProperties) {
         private fun signatureInstance(
             signatureAlgorithm: String,
             signatureProvider: String?,
-            verificationKey: PublicKey
+            verificationKey: PublicKey,
         ): Signature {
             val signature = signatureInstance(signatureAlgorithm, signatureProvider)
             try {

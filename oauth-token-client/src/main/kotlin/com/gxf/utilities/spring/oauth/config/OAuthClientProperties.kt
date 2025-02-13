@@ -16,5 +16,5 @@ class OAuthClientProperties(
     @Value("\${oauth.client.scope}") val scope: String,
     @Value("\${oauth.client.token-endpoint}") val tokenEndpoint: String,
     @Value("\${oauth.client.private-key}") val privateKey: Resource,
-    @Value("\${oauth.client.certificate}") val certificate: Resource
+    @Value("\${oauth.client.certificate}") val certificate: Resource,
 )
