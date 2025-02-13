@@ -3,23 +3,23 @@
 // SPDX-License-Identifier: Apache-2.0
 
 dependencies {
-    implementation("org.springframework:spring-context")
-    implementation("org.springframework.kafka:spring-kafka")
-    implementation("org.springframework.boot:spring-boot-autoconfigure")
+    implementation(libs.springContext)
+    implementation(libs.springKafka)
+    implementation(libs.springBootAutoconfigure)
 
     implementation(project(":kafka-avro"))
 
     api(libs.avro)
 
-    testImplementation("org.junit.jupiter:junit-jupiter-api")
-    testImplementation("org.junit.jupiter:junit-jupiter-engine")
-    testImplementation("org.assertj:assertj-core")
-    testImplementation("org.springframework:spring-test")
-    testImplementation("org.springframework.boot:spring-boot-test")
-    testImplementation("org.springframework.boot:spring-boot-starter")
-    testImplementation(testLibs.mockitoKotlin)
+    testImplementation(libs.junitJupiterApi)
+    testImplementation(libs.junitJupiterEngine)
+    testImplementation(libs.assertJ)
+    testImplementation(libs.springTest)
+    testImplementation(libs.springBootTest)
+    testImplementation(libs.springBootStarter)
+    testImplementation(libs.mockitoKotlin)
 
-    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+    testRuntimeOnly(libs.junitPlatformLauncher)
 }
 
 tasks.test {

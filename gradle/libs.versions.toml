@@ -1,0 +1,44 @@
+# SPDX-FileCopyrightText: Copyright Contributors to the GXF project
+#
+# SPDX-License-Identifier: Apache-2.0
+
+[versions]
+avro = "1.12.0"
+avroPlugin = "1.9.1"
+dependencyManagement = "1.1.7"
+kotlin = "2.1.10"
+mockitoKotlin = "5.4.0"
+mockServer = "5.15.0"
+msal4j = "1.17.2"
+sonarqube = "6.0.1.5171"
+spotless = "6.25.0"
+
+[libraries]
+assertJ = { group = "org.assertj", name = "assertj-core" }
+avro = { group = "org.apache.avro", name = "avro", version.ref = "avro" }
+junitJupiterApi = { group = "org.junit.jupiter", name = "junit-jupiter-api" }
+junitJupiterEngine = { group = "org.junit.jupiter", name = "junit-jupiter-engine" }
+junitPlatformLauncher = { group = "org.junit.platform", name = "junit-platform-launcher" }
+kafkaClients = { group = "org.apache.kafka", name = "kafka-clients" }
+mockitoKotlin = { group = "org.mockito.kotlin", name = "mockito-kotlin", version.ref = "mockitoKotlin" }
+mockServer = { group = "org.mock-server", name = "mockserver-spring-test-listener", version.ref = "mockServer" }
+msal = { group = "com.microsoft.azure", name = "msal4j", version.ref = "msal4j" }
+slf4jApi = { group = "org.slf4j", name = "slf4j-api" }
+springBootAutoconfigure = { group = "org.springframework.boot", name = "spring-boot-autoconfigure" }
+springBootStarter = { group = "org.springframework.boot", name = "spring-boot-starter" }
+springBootStarterTest = { group = "org.springframework.boot", name = "spring-boot-starter-test" }
+springBootTest = { group = "org.springframework.boot", name = "spring-boot-test" }
+springContext = { group = "org.springframework", name = "spring-context" }
+springKafka = { group = "org.springframework.kafka", name = "spring-kafka" }
+springTest = { group = "org.springframework", name = "spring-test" }
+
+[plugins]
+avro = { id = "com.github.davidmc24.gradle.plugin.avro", version.ref = "avroPlugin" }
+dependencyManagement = { id = "io.spring.dependency-management", version.ref = "dependencyManagement" }
+jacoco = { id = "jacoco" }
+jacocoReportAggregation = { id = "jacoco-report-aggregation" }
+kotlin = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
+mavenPublish = { id = "org.gradle.maven-publish" }
+sonarqube = { id = "org.sonarqube", version.ref = "sonarqube" }
+spotless = { id = "com.diffplug.spotless", version.ref = "spotless" }
+spring = { id = "org.jetbrains.kotlin.plugin.spring", version.ref = "kotlin" }
