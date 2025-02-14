@@ -11,7 +11,7 @@ mockitoKotlin = "5.4.0"
 mockServer = "5.15.0"
 msal4j = "1.17.2"
 sonarqube = "6.0.1.5171"
-spotless = "6.25.0"
+spotless = "7.0.2"
 
 [libraries]
 assertJ = { group = "org.assertj", name = "assertj-core" }
