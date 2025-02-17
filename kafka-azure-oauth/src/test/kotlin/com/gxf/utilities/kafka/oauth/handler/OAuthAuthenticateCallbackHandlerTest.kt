@@ -28,7 +28,10 @@ class OAuthAuthenticateCallbackHandlerTest {
 
         val appConfig =
             AppConfigurationEntry(
-                "org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule", REQUIRED, options())
+                "org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule",
+                REQUIRED,
+                options(),
+            )
         handler.configure(emptyMap<String?, Any>(), OAuthBearerLoginModule.OAUTHBEARER_MECHANISM, listOf(appConfig))
 
         assertEquals(clientId, handler.clientId)
@@ -69,5 +72,6 @@ class OAuthAuthenticateCallbackHandlerTest {
             CLIENT_ID_CONFIG to clientId,
             TOKEN_ENDPOINT_CONFIG to tokenEndpoint,
             SCOPE_CONFIG to scopes,
-            TOKEN_FILE_CONFIG to tokenFilePath)
+            TOKEN_FILE_CONFIG to tokenFilePath,
+        )
 }

@@ -25,5 +25,5 @@ open class MessageSigningProperties(
     /** PEM file containing the private key */
     var privateKeyFile: Resource? = null,
     /** PEM file containing the public key */
-    var publicKeyFile: Resource? = null
+    var publicKeyFile: Resource? = null,
 )
