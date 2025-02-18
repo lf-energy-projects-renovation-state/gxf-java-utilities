@@ -19,12 +19,6 @@ testing {
             dependencies {
                 implementation(project())
                 implementation(libs.springBootStarterTest)
-                implementation(libs.mockServer) {
-                    // CVE fixes
-                    exclude(group = "org.bouncycastle", module = "bcpkix-jdk18on")
-                    exclude(group = "org.bouncycastle", module = "bcprov-jdk18on")
-                    exclude(group = "org.bouncycastle", module = "bcutil-jdk18on")
-                }
             }
         }
     }
