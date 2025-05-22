@@ -12,6 +12,7 @@ msal4j = "1.19.0"
 sonarqube = "6.0.1.5171"
 spotless = "7.0.2"
 gradleWrapperUpgrade = "0.12"
+springBoot = "3.4.2"
 
 [libraries]
 assertJ = { group = "org.assertj", name = "assertj-core" }
@@ -24,6 +25,7 @@ mockitoKotlin = { group = "org.mockito.kotlin", name = "mockito-kotlin", version
 msal = { group = "com.microsoft.azure", name = "msal4j", version.ref = "msal4j" }
 slf4jApi = { group = "org.slf4j", name = "slf4j-api" }
 springBootAutoconfigure = { group = "org.springframework.boot", name = "spring-boot-autoconfigure" }
+springBootDependencies = { group = "org.springframework.boot", name = "spring-boot-dependencies", version.ref = "springBoot" }
 springBootStarter = { group = "org.springframework.boot", name = "spring-boot-starter" }
 springBootStarterTest = { group = "org.springframework.boot", name = "spring-boot-starter-test" }
 springBootTest = { group = "org.springframework.boot", name = "spring-boot-test" }
