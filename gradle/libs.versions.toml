@@ -11,6 +11,7 @@ mockitoKotlin = "5.4.0"
 msal4j = "1.19.0"
 sonarqube = "6.0.1.5171"
 spotless = "7.0.2"
+gradleWrapperUpgrade = "0.12"
 
 [libraries]
 assertJ = { group = "org.assertj", name = "assertj-core" }
@@ -40,3 +41,4 @@ mavenPublish = { id = "org.gradle.maven-publish" }
 sonarqube = { id = "org.sonarqube", version.ref = "sonarqube" }
 spotless = { id = "com.diffplug.spotless", version.ref = "spotless" }
 spring = { id = "org.jetbrains.kotlin.plugin.spring", version.ref = "kotlin" }
+gradleWrapperUpgrade = { id = "org.gradle.wrapper-upgrade", version.ref = "gradleWrapperUpgrade" }
