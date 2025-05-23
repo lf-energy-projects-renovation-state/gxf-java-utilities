@@ -11,6 +11,7 @@ plugins {
     alias(libs.plugins.spring) apply false
     alias(libs.plugins.sonarqube)
     alias(libs.plugins.spotless)
+    alias(libs.plugins.gradleWrapperUpgrade)
 }
 
 sonar {
@@ -26,6 +27,15 @@ version = System.getenv("GITHUB_REF_NAME")
             ?.lowercase()
             ?.let { if (SemVer.valid(it)) it.removePrefix("v") else "${it}-SNAPSHOT" }
         ?: "develop"
+
+wrapperUpgrade {
+    gradle {
+        register("gxf-java-utilities") {
+            repo.set("OSGP/gxf-java-utilities")
+            baseBranch.set("main")
+        }
+    }
+}
 
 subprojects {
     apply(plugin = rootProject.libs.plugins.kotlin.get().pluginId)
@@ -45,7 +55,7 @@ subprojects {
 
     extensions.configure<StandardDependencyManagementExtension> {
         imports {
-            mavenBom("org.springframework.boot:spring-boot-dependencies:3.4.2")
+            mavenBom(rootProject.libs.springBootDependencies.get().toString())
         }
     }
 
