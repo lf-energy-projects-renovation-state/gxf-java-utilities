@@ -55,7 +55,9 @@ subprojects {
 
     extensions.configure<StandardDependencyManagementExtension> {
         imports {
-            mavenBom(rootProject.libs.springBootDependencies.get().toString())
+            mavenBom(rootProject.libs.springBootDependencies.get().toString()) {
+                bomProperty("kotlin.version", rootProject.libs.plugins.kotlin.get().version.toString())
+            }
         }
     }
 
