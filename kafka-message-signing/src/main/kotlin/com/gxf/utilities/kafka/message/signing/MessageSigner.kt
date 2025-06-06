@@ -4,6 +4,7 @@
 package com.gxf.utilities.kafka.message.signing
 
 import com.gxf.utilities.kafka.avro.AvroEncoder
+import com.gxf.utilities.kafka.message.wrapper.FlexibleSignableMessageWrapper
 import com.gxf.utilities.kafka.message.wrapper.SignableMessageWrapper
 import java.io.IOException
 import java.io.UncheckedIOException
@@ -46,9 +47,7 @@ class MessageSigner(properties: MessageSigningProperties) {
         }
     }
 
-    fun canSignMessages(): Boolean {
-        return this.signingEnabled && this.signingKey != null
-    }
+    fun canSignMessages(): Boolean = signingEnabled && signingKey != null
 
     /**
      * Signs the provided `message`, overwriting an existing signature field inside the message object.
@@ -61,9 +60,9 @@ class MessageSigner(properties: MessageSigningProperties) {
      * @throws UncheckedIOException if determining the bytes for the message throws an IOException.
      * @throws UncheckedSecurityException if the signing process throws a SignatureException.
      */
-    fun <T> signUsingField(message: SignableMessageWrapper<T>): T {
-        if (this.signingEnabled) {
-            val signatureBytes = this.signature(message)
+    fun <T> signUsingField(message: FlexibleSignableMessageWrapper<T>): T {
+        if (signingEnabled) {
+            val signatureBytes = signature(message)
             message.setSignature(signatureBytes)
         }
         return message.message
@@ -82,8 +81,8 @@ class MessageSigner(properties: MessageSigningProperties) {
     fun signUsingHeader(
         producerRecord: ProducerRecord<String, out SpecificRecordBase>
     ): ProducerRecord<String, out SpecificRecordBase> {
-        if (this.signingEnabled) {
-            val signature = this.signature(producerRecord)
+        if (signingEnabled) {
+            val signature = signature(producerRecord)
             producerRecord.headers().add(RECORD_HEADER_KEY_SIGNATURE, signature.array())
         }
         return producerRecord
@@ -102,19 +101,19 @@ class MessageSigner(properties: MessageSigningProperties) {
      * @throws UncheckedIOException if determining the bytes for the message throws an IOException.
      * @throws UncheckedSecurityException if the signing process throws a SignatureException.
      */
-    private fun signature(message: SignableMessageWrapper<*>): ByteBuffer {
-        check(this.canSignMessages()) {
+    private fun signature(message: FlexibleSignableMessageWrapper<*>): ByteBuffer {
+        check(canSignMessages()) {
             "This MessageSigner is not configured for signing, it can only be used for verification"
         }
         val oldSignature = message.getSignature()
-        message.setSignature(null)
-        val byteBuffer = this.toByteBuffer(message)
+        message.clearSignature()
+        val byteBuffer = toByteBuffer(message)
         try {
             return signature(byteBuffer)
         } catch (e: SignatureException) {
             throw UncheckedSecurityException("Unable to sign message", e)
         } finally {
-            message.setSignature(oldSignature)
+            oldSignature?.let { message.setSignature(it) }
         }
     }
 
@@ -132,28 +131,22 @@ class MessageSigner(properties: MessageSigningProperties) {
      * @throws UncheckedSecurityException if the signing process throws a SignatureException.
      */
     private fun signature(producerRecord: ProducerRecord<String, out SpecificRecordBase>): ByteBuffer {
-        check(this.canSignMessages()) {
+        check(canSignMessages()) {
             "This MessageSigner is not configured for signing, it can only be used for verification"
         }
-        val oldSignatureHeader = producerRecord.headers().lastHeader(RECORD_HEADER_KEY_SIGNATURE)
-        producerRecord.headers().remove(RECORD_HEADER_KEY_SIGNATURE)
         val specificRecordBase = producerRecord.value()
-        val byteBuffer = this.toByteBuffer(specificRecordBase)
+        val byteBuffer = toByteBuffer(specificRecordBase)
         try {
             return signature(byteBuffer)
         } catch (e: SignatureException) {
             throw UncheckedSecurityException("Unable to sign message", e)
-        } finally {
-            if (oldSignatureHeader != null) {
-                producerRecord.headers().add(RECORD_HEADER_KEY_SIGNATURE, oldSignatureHeader.value())
-            }
         }
     }
 
     private fun signature(byteBuffer: ByteBuffer): ByteBuffer {
         val messageBytes: ByteBuffer =
-            if (this.stripAvroHeader) {
-                this.stripAvroHeader(byteBuffer)
+            if (stripAvroHeader) {
+                stripAvroHeader(byteBuffer)
             } else {
                 byteBuffer
             }
@@ -163,7 +156,7 @@ class MessageSigner(properties: MessageSigningProperties) {
     }
 
     fun canVerifyMessageSignatures(): Boolean {
-        return this.signingEnabled && this.verificationKey != null
+        return signingEnabled && verificationKey != null
     }
 
     /**
@@ -172,8 +165,8 @@ class MessageSigner(properties: MessageSigningProperties) {
      * @param message the message to be verified
      * @return `true` if the signature of the given `message` was verified; `false` if not.
      */
-    fun <T> verifyUsingField(message: SignableMessageWrapper<T>): Boolean {
-        if (!this.canVerifyMessageSignatures()) {
+    fun <T> verifyUsingField(message: FlexibleSignableMessageWrapper<T>): Boolean {
+        if (!canVerifyMessageSignatures()) {
             logger.error("This MessageSigner is not configured for verification, it can only be used for signing")
             return false
         }
@@ -186,8 +179,8 @@ class MessageSigner(properties: MessageSigningProperties) {
         }
 
         try {
-            message.setSignature(null)
-            return this.verifySignatureBytes(messageSignature, this.toByteBuffer(message))
+            message.clearSignature()
+            return verifySignatureBytes(messageSignature, toByteBuffer(message))
         } catch (e: Exception) {
             logger.error("Unable to verify message signature", e)
             return false
@@ -203,7 +196,7 @@ class MessageSigner(properties: MessageSigningProperties) {
      * @return `true` if the signature of the given `consumerRecord` was verified; `false` if not. SignatureException.
      */
     fun verifyUsingHeader(consumerRecord: ConsumerRecord<String, out SpecificRecordBase>): Boolean {
-        if (!this.canVerifyMessageSignatures()) {
+        if (!canVerifyMessageSignatures()) {
             logger.error("This MessageSigner is not configured for verification, it can only be used for signing")
             return false
         }
@@ -222,7 +215,7 @@ class MessageSigner(properties: MessageSigningProperties) {
 
         try {
             val specificRecordBase: SpecificRecordBase = consumerRecord.value()
-            return this.verifySignatureBytes(ByteBuffer.wrap(signatureBytes), this.toByteBuffer(specificRecordBase))
+            return verifySignatureBytes(ByteBuffer.wrap(signatureBytes), toByteBuffer(specificRecordBase))
         } catch (e: Exception) {
             logger.error("Unable to verify message signature", e)
             return false
@@ -232,8 +225,8 @@ class MessageSigner(properties: MessageSigningProperties) {
     @Throws(SignatureException::class)
     private fun verifySignatureBytes(signatureBytes: ByteBuffer, messageByteBuffer: ByteBuffer): Boolean {
         val messageBytes: ByteBuffer =
-            if (this.stripAvroHeader) {
-                this.stripAvroHeader(messageByteBuffer)
+            if (stripAvroHeader) {
+                stripAvroHeader(messageByteBuffer)
             } else {
                 messageByteBuffer
             }
@@ -249,13 +242,13 @@ class MessageSigner(properties: MessageSigningProperties) {
     }
 
     private fun stripAvroHeader(bytes: ByteBuffer): ByteBuffer {
-        if (this.hasAvroHeader(bytes)) {
+        if (hasAvroHeader(bytes)) {
             return ByteBuffer.wrap(Arrays.copyOfRange(bytes.array(), AVRO_HEADER_LENGTH, bytes.array().size))
         }
         return bytes
     }
 
-    private fun toByteBuffer(message: SignableMessageWrapper<*>): ByteBuffer {
+    private fun toByteBuffer(message: FlexibleSignableMessageWrapper<*>): ByteBuffer {
         try {
             return message.toByteBuffer()
         } catch (e: IOException) {
@@ -274,11 +267,11 @@ class MessageSigner(properties: MessageSigningProperties) {
     override fun toString(): String {
         return String.format(
             "MessageSigner[algorithm=\"%s\"-\"%s\", provider=\"%s\", sign=%b, verify=%b]",
-            this.signatureAlgorithm,
-            this.keyAlgorithm,
-            this.signatureProvider,
-            this.canSignMessages(),
-            this.canVerifyMessageSignatures(),
+            signatureAlgorithm,
+            keyAlgorithm,
+            signatureProvider,
+            canSignMessages(),
+            canVerifyMessageSignatures(),
         )
     }
 
@@ -365,4 +358,15 @@ class MessageSigner(properties: MessageSigningProperties) {
             }
         }
     }
+
+    // For backwards compatibility
+    @Deprecated("Call with FlexibleSignableMessageWrapper instead. This method will be removed in a future release.")
+    fun <T> signUsingField(message: SignableMessageWrapper<T>): T = signUsingField(message.toFlexibleWrapper())
+
+    @Deprecated("Call with FlexibleSignableMessageWrapper instead. This method will be removed in a future release.")
+    private fun signature(message: SignableMessageWrapper<*>): ByteBuffer = signature(message.toFlexibleWrapper())
+
+    @Deprecated("Call with FlexibleSignableMessageWrapper instead. This method will be removed in a future release.")
+    fun <T> verifyUsingField(message: SignableMessageWrapper<T>): Boolean =
+        verifyUsingField(message.toFlexibleWrapper())
 }
