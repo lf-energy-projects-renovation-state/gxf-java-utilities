@@ -26,8 +26,8 @@ abstract class SignableMessageWrapper<T>(val message: T) {
     internal fun toFlexibleWrapper() =
         FlexibleSignableMessageWrapper(
             message,
-            { message -> toByteBuffer() },
-            { message -> getSignature() },
-            { message, signature -> setSignature(signature) },
+            { _ -> toByteBuffer() },
+            { _ -> getSignature() },
+            { _, signature -> setSignature(signature) },
         )
 }
