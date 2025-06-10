@@ -10,7 +10,7 @@ import java.nio.ByteBuffer
  * Wrapper for signable messages. Because these messages are generated from Avro schemas, they can't be changed. This
  * wrapper unifies them for the MessageSigner.
  */
-@Deprecated("Use SignableMessage instead. This class will be removed in a future release.")
+@Deprecated("Use FlexibleSignableMessageWrapper instead. This class will be removed in a future release.")
 abstract class SignableMessageWrapper<T>(val message: T) {
 
     /** @return ByteBuffer of the whole message */
