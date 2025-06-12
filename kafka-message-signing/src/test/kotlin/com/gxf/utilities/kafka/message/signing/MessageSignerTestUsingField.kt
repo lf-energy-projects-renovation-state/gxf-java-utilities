@@ -5,8 +5,6 @@ package com.gxf.utilities.kafka.message.signing
 
 import com.gxf.utilities.kafka.message.wrapper.FlexibleSignableMessageWrapper
 import java.nio.ByteBuffer
-import java.security.SecureRandom
-import java.util.Random
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 
@@ -27,7 +25,7 @@ class MessageSignerTestUsingField {
 
     @Test
     fun signsMessageReplacingSignature() {
-        val randomSignature = randomSignature()
+        val randomSignature = TestConstants.randomSignature()
         val messageWrapper = messageWrapper()
         messageWrapper.setSignature(randomSignature)
 
@@ -60,7 +58,7 @@ class MessageSignerTestUsingField {
 
     @Test
     fun doesNotVerifyMessagesWithIncorrectSignature() {
-        val randomSignature = randomSignature()
+        val randomSignature = TestConstants.randomSignature()
         val messageWrapper = messageWrapper(randomSignature)
 
         val validSignature = messageSigner.verifyUsingField(messageWrapper)
@@ -98,16 +96,6 @@ class MessageSignerTestUsingField {
         val messageWrapper = messageWrapper()
         messageSigner.signUsingField(messageWrapper)
         return messageWrapper
-    }
-
-    private fun randomSignature(): ByteBuffer {
-        val random: Random = SecureRandom()
-        val keySize = 2048
-
-        val signature = ByteArray(keySize / 8)
-        random.nextBytes(signature)
-
-        return ByteBuffer.wrap(signature)
     }
 
     private fun message(): MessageWithSignature {

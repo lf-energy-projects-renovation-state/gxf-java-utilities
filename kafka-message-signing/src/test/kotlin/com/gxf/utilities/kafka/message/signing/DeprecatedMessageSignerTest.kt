@@ -6,8 +6,6 @@ package com.gxf.utilities.kafka.message.signing
 import com.gxf.utilities.kafka.message.wrapper.SignableMessageWrapper
 import java.nio.ByteBuffer
 import java.nio.charset.StandardCharsets
-import java.security.SecureRandom
-import java.util.Random
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 
@@ -20,7 +18,7 @@ class DeprecatedMessageSignerTest {
 
     @Test
     fun signsMessageWithoutSignature() {
-        val messageWrapper: SignableMessageWrapper<*> = this.messageWrapper()
+        val messageWrapper: SignableMessageWrapper<*> = messageWrapper()
 
         messageSigner.signUsingField(messageWrapper)
 
@@ -29,8 +27,8 @@ class DeprecatedMessageSignerTest {
 
     @Test
     fun signsMessageReplacingSignature() {
-        val randomSignature = this.randomSignature()
-        val messageWrapper = this.messageWrapper()
+        val randomSignature = TestConstants.randomSignature()
+        val messageWrapper = messageWrapper()
         messageWrapper.setSignature(randomSignature)
 
         val actualSignatureBefore = messageWrapper.getSignature()
@@ -44,7 +42,7 @@ class DeprecatedMessageSignerTest {
 
     @Test
     fun verifiesMessagesWithValidSignature() {
-        val message = this.properlySignedMessage()
+        val message = properlySignedMessage()
 
         val signatureWasVerified = messageSigner.verifyUsingField(message)
 
@@ -53,7 +51,7 @@ class DeprecatedMessageSignerTest {
 
     @Test
     fun doesNotVerifyMessagesWithoutSignature() {
-        val messageWrapper = this.messageWrapper()
+        val messageWrapper = messageWrapper()
 
         val validSignature = messageSigner.verifyUsingField(messageWrapper)
 
@@ -62,8 +60,8 @@ class DeprecatedMessageSignerTest {
 
     @Test
     fun doesNotVerifyMessagesWithIncorrectSignature() {
-        val randomSignature = this.randomSignature()
-        val messageWrapper = this.messageWrapper(randomSignature)
+        val randomSignature = TestConstants.randomSignature()
+        val messageWrapper = messageWrapper(randomSignature)
 
         val validSignature = messageSigner.verifyUsingField(messageWrapper)
 
@@ -72,7 +70,7 @@ class DeprecatedMessageSignerTest {
 
     @Test
     fun verifiesMessagesPreservingTheSignatureAndItsProperties() {
-        val message = this.properlySignedMessage()
+        val message = properlySignedMessage()
         val originalSignature = message.getSignature()
 
         messageSigner.verifyUsingField(message)
@@ -92,19 +90,9 @@ class DeprecatedMessageSignerTest {
     }
 
     private fun properlySignedMessage(): TestableWrapper {
-        val messageWrapper = this.messageWrapper()
+        val messageWrapper = messageWrapper()
         messageSigner.signUsingField(messageWrapper)
         return messageWrapper
-    }
-
-    private fun randomSignature(): ByteBuffer {
-        val random: Random = SecureRandom()
-        val keySize = 2048
-
-        val signature = ByteArray(keySize / 8)
-        random.nextBytes(signature)
-
-        return ByteBuffer.wrap(signature)
     }
 
     private class TestableWrapper : SignableMessageWrapper<String>("Some test message") {
@@ -115,11 +103,11 @@ class DeprecatedMessageSignerTest {
         }
 
         override fun getSignature(): ByteBuffer? {
-            return this.signature
+            return signature
         }
 
-        override fun setSignature(signature: ByteBuffer?) {
-            this.signature = signature
+        override fun setSignature(newSignature: ByteBuffer?) {
+            signature = newSignature
         }
     }
 }
