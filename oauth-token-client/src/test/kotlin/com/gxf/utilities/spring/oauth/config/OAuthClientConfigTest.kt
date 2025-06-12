@@ -19,6 +19,13 @@ internal class OAuthClientConfigTest {
     }
 
     @Test
+    fun `should read private key with whitespace`() {
+        val client = OAuthClientConfig()
+        val privateKey = client.getPrivateKey(ClassPathResource("keys/private-key-whitespace.key"))
+        assertThat(privateKey).isNotNull()
+    }
+
+    @Test
     fun `should throw exception for non existent private key`() {
         val client = OAuthClientConfig()
         assertThatThrownBy { client.getPrivateKey(ClassPathResource("keys/does-not-exist.key")) }
@@ -29,7 +36,7 @@ internal class OAuthClientConfigTest {
     @Test
     fun `should read certificate`() {
         val client = OAuthClientConfig()
-        val certificate = client.getCertificate(ClassPathResource("keys/certificate.crt"))
+        val certificate = client.getCertificate(ClassPathResource("keys/certificate-whitespace.crt"))
         assertThat(certificate).isNotNull()
     }
 

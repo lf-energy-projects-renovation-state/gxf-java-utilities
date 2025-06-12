@@ -30,6 +30,7 @@ class OAuthClientConfig {
 
     companion object {
         private val LOGGER = LoggerFactory.getLogger(OAuthClientConfig::class.java)
+        private val START_END_REGEX = Regex("-----[A-Z ]*-----")
     }
 
     @Bean
@@ -59,9 +60,7 @@ class OAuthClientConfig {
             LOGGER.info("Reading private key from: ${resource.uri}")
             Files.lines(resource.file.toPath()).use { lines ->
                 val privateKeyContent =
-                    lines
-                        .filter { line: String -> !line.matches("-----[A-Z ]*-----".toRegex()) }
-                        .collect(Collectors.joining())
+                    lines.collect(Collectors.joining()).replace(START_END_REGEX, "").filterNot { it.isWhitespace() }
                 val kf = KeyFactory.getInstance("RSA")
                 val keySpecPKCS8 = PKCS8EncodedKeySpec(Base64.getDecoder().decode(privateKeyContent))
                 return kf.generatePrivate(keySpecPKCS8)
@@ -76,9 +75,7 @@ class OAuthClientConfig {
             LOGGER.info("Reading certificate from: ${resource.uri}")
             Files.lines(resource.file.toPath()).use { lines ->
                 val certificateContent =
-                    lines
-                        .filter { line: String -> !line.matches("-----[A-Z ]*-----".toRegex()) }
-                        .collect(Collectors.joining())
+                    lines.collect(Collectors.joining()).replace(START_END_REGEX, "").filterNot { it.isWhitespace() }
                 val inputStream = ByteArrayInputStream(Base64.getDecoder().decode(certificateContent))
                 return CertificateFactory.getInstance("X.509").generateCertificate(inputStream) as X509Certificate
             }
