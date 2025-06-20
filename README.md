@@ -35,17 +35,36 @@ Library for signing Kafka messages and for verification of signed Kafka messages
 
 Two variations are supported:
 
-- The signature is set on the message, via `SignableMessageWrapper`'s `signature` field;
+- The signature is set on a field of the message, via `FlexibleSignableMessageWrapper`;
 - The signature is set as a `signature` header on the Kafka `ProducerRecord`.
 
+### Wrapping messages
+Wrapping messages is required when using the 'sign using _field_' method.
+
+Here's how to wrap your message in FlexibleSignableMessageWrapper:
+
+```kotlin
+class MyMessage(val body: String, var sig: ByteBuffer? = null)
+
+val myMessage = MyMessage(body = "Hello, GXF!")
+
+val wrapped : FlexibleSignableMessageWrapper<MyMessage> = FlexibleSignableMessageWrapper(
+    myMessage,
+    messageGetter = { msg -> ByteBuffer.wrap(msg.body.toByteArray()) },
+    signatureGetter = { msg -> msg.sig },
+    signatureSetter = { msg, sig -> msg.sig = sig }
+)
+```
+
+### Signing and Verifying Messages
 The `MessageSigner` class is used for both signing and verifying a signature.
 
 To sign a message, use one of `MessageSigner`'s sign methods: 
-- `signUsingField(...)` using the `SignableMessageWrapper` to wrap your Avro object;
+- `signUsingField(...)` using the `FlexibleSignableMessageWrapper` to wrap your Avro object;
 - `signUsingHeader(...)` to add the signature to the Avro object's header.
 
 To verify a signature, use one of `MessageSigner`'s verify methods:
-- `verifyUsingField(...)` using the `SignableMessageWrapper` to wrap your Avro object;
+- `verifyUsingField(...)` using the `FlexibleSignableMessageWrapper` to wrap your Avro object;
 - `verifyUsingHeader(...)` to read the signature from the Avro object's header.
 
 ### Spring Auto Configuration
