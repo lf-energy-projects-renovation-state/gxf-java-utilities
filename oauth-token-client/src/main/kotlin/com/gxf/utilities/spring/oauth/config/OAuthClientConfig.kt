@@ -9,15 +9,12 @@ import com.microsoft.aad.msal4j.ClientCredentialFactory
 import com.microsoft.aad.msal4j.ClientCredentialParameters
 import com.microsoft.aad.msal4j.ConfidentialClientApplication
 import com.microsoft.aad.msal4j.IClientCredential
-import java.io.ByteArrayInputStream
-import java.nio.file.Files
 import java.security.KeyFactory
 import java.security.PrivateKey
 import java.security.cert.CertificateFactory
 import java.security.cert.X509Certificate
 import java.security.spec.PKCS8EncodedKeySpec
 import java.util.*
-import java.util.stream.Collectors
 import org.slf4j.LoggerFactory
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Conditional
@@ -30,7 +27,7 @@ class OAuthClientConfig {
 
     companion object {
         private val LOGGER = LoggerFactory.getLogger(OAuthClientConfig::class.java)
-        private val START_END_REGEX = Regex("-----[A-Z ]*-----")
+        private val PEM_REMOVAL_PATTERN = Regex("-----[A-Z ]*-----")
     }
 
     @Bean
@@ -57,14 +54,10 @@ class OAuthClientConfig {
     /** Reads a private key file and puts */
     fun getPrivateKey(resource: Resource): PrivateKey {
         try {
-            LOGGER.info("Reading private key from: ${resource.uri}")
-            Files.lines(resource.file.toPath()).use { lines ->
-                val privateKeyContent =
-                    lines.collect(Collectors.joining()).replace(START_END_REGEX, "").filterNot { it.isWhitespace() }
-                val kf = KeyFactory.getInstance("RSA")
-                val keySpecPKCS8 = PKCS8EncodedKeySpec(Base64.getDecoder().decode(privateKeyContent))
-                return kf.generatePrivate(keySpecPKCS8)
-            }
+            LOGGER.info("Reading private key: ${resource.description}")
+            val privateKeyContent = readPEMFile(resource)
+            val keySpecPKCS8 = PKCS8EncodedKeySpec(Base64.getDecoder().decode(privateKeyContent))
+            return KeyFactory.getInstance("RSA").generatePrivate(keySpecPKCS8)
         } catch (e: Exception) {
             throw OAuthTokenException("Error getting private key", e)
         }
@@ -72,15 +65,15 @@ class OAuthClientConfig {
 
     fun getCertificate(resource: Resource): X509Certificate {
         try {
-            LOGGER.info("Reading certificate from: ${resource.uri}")
-            Files.lines(resource.file.toPath()).use { lines ->
-                val certificateContent =
-                    lines.collect(Collectors.joining()).replace(START_END_REGEX, "").filterNot { it.isWhitespace() }
-                val inputStream = ByteArrayInputStream(Base64.getDecoder().decode(certificateContent))
-                return CertificateFactory.getInstance("X.509").generateCertificate(inputStream) as X509Certificate
-            }
+            LOGGER.info("Reading certificate: ${resource.description}")
+            val certificateContent = readPEMFile(resource)
+            val inputStream = Base64.getDecoder().decode(certificateContent).inputStream()
+            return CertificateFactory.getInstance("X.509").generateCertificate(inputStream) as X509Certificate
         } catch (e: Exception) {
             throw OAuthTokenException("Error getting certificate", e)
         }
     }
+
+    private fun readPEMFile(resource: Resource): String =
+        resource.contentAsByteArray.decodeToString().filterNot { it.isWhitespace() }.replace(PEM_REMOVAL_PATTERN, "")
 }

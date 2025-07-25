@@ -7,6 +7,7 @@ import com.gxf.utilities.spring.oauth.exceptions.OAuthTokenException
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Test
+import org.springframework.core.io.ByteArrayResource
 import org.springframework.core.io.ClassPathResource
 
 internal class OAuthClientConfigTest {
@@ -26,6 +27,16 @@ internal class OAuthClientConfigTest {
     }
 
     @Test
+    fun `should read base 64 private key`() {
+        val client = OAuthClientConfig()
+        val privateKey =
+            client.getPrivateKey(
+                ByteArrayResource(ClassPathResource("keys/private-key.key").inputStream.readAllBytes())
+            )
+        assertThat(privateKey).isNotNull()
+    }
+
+    @Test
     fun `should throw exception for non existent private key`() {
         val client = OAuthClientConfig()
         assertThatThrownBy { client.getPrivateKey(ClassPathResource("keys/does-not-exist.key")) }
@@ -36,7 +47,24 @@ internal class OAuthClientConfigTest {
     @Test
     fun `should read certificate`() {
         val client = OAuthClientConfig()
+        val certificate = client.getCertificate(ClassPathResource("keys/certificate.crt"))
+        assertThat(certificate).isNotNull()
+    }
+
+    @Test
+    fun `should read certificate with whitespace`() {
+        val client = OAuthClientConfig()
         val certificate = client.getCertificate(ClassPathResource("keys/certificate-whitespace.crt"))
+        assertThat(certificate).isNotNull()
+    }
+
+    @Test
+    fun `should read base 64 resource`() {
+        val client = OAuthClientConfig()
+        val certificate =
+            client.getCertificate(
+                ByteArrayResource(ClassPathResource("keys/certificate.crt").inputStream.readAllBytes())
+            )
         assertThat(certificate).isNotNull()
     }
 
