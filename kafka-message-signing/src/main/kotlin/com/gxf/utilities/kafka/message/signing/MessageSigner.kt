@@ -72,15 +72,17 @@ class MessageSigner(properties: MessageSigningProperties) {
      * Signs the provided `producerRecord` in the header, overwriting an existing signature, if a non-null value is
      * already set.
      *
-     * @param producerRecord the record to be signed
+     * @param producerRecord the record to be signed*
+     * @return Returns the record with a signature in the header. If signing is disabled through configuration, the
+     *   record will be returned unchanged.
      * @throws IllegalStateException if this message signer has a public key for signature verification, but does not
      *   have the private key needed for signing messages.
      * @throws UncheckedIOException if determining the bytes for the message throws an IOException.
      * @throws UncheckedSecurityException if the signing process throws a SignatureException.
      */
-    fun signUsingHeader(
-        producerRecord: ProducerRecord<String, out SpecificRecordBase>
-    ): ProducerRecord<String, out SpecificRecordBase> {
+    fun <ValueType : SpecificRecordBase> signUsingHeader(
+        producerRecord: ProducerRecord<String, ValueType>
+    ): ProducerRecord<String, ValueType> {
         if (signingEnabled) {
             val signature = signature(producerRecord)
             producerRecord.headers().add(RECORD_HEADER_KEY_SIGNATURE, signature.array())
