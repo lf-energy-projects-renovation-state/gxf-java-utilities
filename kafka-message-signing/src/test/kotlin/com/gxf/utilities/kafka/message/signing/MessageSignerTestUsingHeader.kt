@@ -20,9 +20,10 @@ class MessageSignerTestUsingHeader {
 
     @Test
     fun signsRecordHeaderWithoutSignature() {
-        val record = producerRecord()
+        val record: ProducerRecord<String, Message> = producerRecord()
 
-        messageSigner.signUsingHeader(record)
+        // Assert that the returned var is of exactly the same type as the input
+        val sameTypeResult: ProducerRecord<String, Message> = messageSigner.signUsingHeader(record)
 
         assertThat(record.headers().lastHeader(MessageSigner.RECORD_HEADER_KEY_SIGNATURE)).isNotNull()
     }
