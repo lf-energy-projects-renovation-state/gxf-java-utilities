@@ -1,0 +1,3 @@
+signing:
+  security-provider: "security-provider"
+  security-algorithm: "security-algorithm"

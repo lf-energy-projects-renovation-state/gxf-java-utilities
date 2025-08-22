@@ -13,6 +13,7 @@ sonarqube = "6.2.0.5505"
 spotless = "7.2.1"
 gradleWrapperUpgrade = "0.12"
 springBoot = "3.5.4"
+kotlinLogging = "7.0.12"
 
 [libraries]
 assertJ = { group = "org.assertj", name = "assertj-core" }
@@ -24,6 +25,8 @@ kafkaClients = { group = "org.apache.kafka", name = "kafka-clients" }
 mockitoKotlin = { group = "org.mockito.kotlin", name = "mockito-kotlin", version.ref = "mockitoKotlin" }
 msal = { group = "com.microsoft.azure", name = "msal4j", version.ref = "msal4j" }
 slf4jApi = { group = "org.slf4j", name = "slf4j-api" }
+kotlinLoggingJvm = { group = "io.github.oshai", name = "kotlin-logging-jvm", version.ref = "kotlinLogging" }
+springBoot = { group = "org.springframework.boot", name = "spring-boot", version.ref = "springBoot"}
 springBootAutoconfigure = { group = "org.springframework.boot", name = "spring-boot-autoconfigure" }
 springBootDependencies = { group = "org.springframework.boot", name = "spring-boot-dependencies", version.ref = "springBoot" }
 springBootStarter = { group = "org.springframework.boot", name = "spring-boot-starter" }

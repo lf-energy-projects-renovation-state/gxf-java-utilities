@@ -139,3 +139,14 @@ oauth.client.scope=client-scope
 oauth.client.private-key=classpath:keys/private-key.key
 oauth.client.certificate=classpath:keys/certificate.crt
 ```
+
+## oslp-message-signing
+
+Library for signing OSLP messages and for verification of signed OSLP messages with two methods:
+- createSignature() to create a signature for an OSLP message based on the private key
+- verifySignature() to verify the signature of an OSLP message based on the public key
+
+The keys can be provided through the KeyProvider interface, which can be implemented to provide custom key retrieval logic.
+
+The SigningUtil class use the security provider `SunRsaSign` and the algorithm `SHA256withRSA` as defaults.
+Autoconfiguration is available for Spring Boot applications to change these defaults.
