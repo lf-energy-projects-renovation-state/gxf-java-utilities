@@ -5,9 +5,7 @@ package com.gxf.utilities.oslp.message.signing
 
 import java.security.PrivateKey
 import java.security.PublicKey
-import org.springframework.stereotype.Component
 
-@Component
 interface KeyProvider {
 
     fun getPublicKey(): PublicKey
