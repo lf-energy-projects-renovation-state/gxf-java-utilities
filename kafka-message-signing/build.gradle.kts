@@ -17,7 +17,7 @@ dependencies {
     testImplementation(libs.springTest)
     testImplementation(libs.springBootTest)
     testImplementation(libs.springBootStarter)
-    testImplementation(libs.mockitoKotlin)
+    testImplementation(libs.mockk)
 
     testRuntimeOnly(libs.junitPlatformLauncher)
 }
