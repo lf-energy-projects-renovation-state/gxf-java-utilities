@@ -3,12 +3,11 @@
 // SPDX-License-Identifier: Apache-2.0
 package com.gxf.utilities.kafka.message.signing
 
-import java.util.function.Consumer
+import com.gxf.utilities.kafka.message.signing.TestHelper.producerRecordToConsumerRecord
 import org.apache.avro.Schema
 import org.apache.avro.specific.SpecificRecordBase
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.apache.kafka.clients.producer.ProducerRecord
-import org.apache.kafka.common.header.Header
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 
@@ -70,13 +69,6 @@ class MessageSignerTestUsingHeader {
         val validSignature = messageSigner.verifyUsingHeader(consumerRecord)
 
         assertThat(validSignature).isFalse()
-    }
-
-    private fun <K, V> producerRecordToConsumerRecord(producerRecord: ProducerRecord<K, V>): ConsumerRecord<K, V> {
-        val consumerRecord =
-            ConsumerRecord(producerRecord.topic(), 0, 123L, producerRecord.key(), producerRecord.value())
-        producerRecord.headers().forEach(Consumer { header: Header? -> consumerRecord.headers().add(header) })
-        return consumerRecord
     }
 
     private fun properlySignedRecord(): ConsumerRecord<String, Message> {

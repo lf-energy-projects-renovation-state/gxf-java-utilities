@@ -10,9 +10,15 @@ import java.io.IOException
 import java.io.UncheckedIOException
 import java.nio.ByteBuffer
 import java.nio.charset.StandardCharsets
-import java.security.*
+import java.security.GeneralSecurityException
+import java.security.InvalidKeyException
+import java.security.KeyFactory
+import java.security.PrivateKey
+import java.security.PublicKey
+import java.security.Signature
+import java.security.SignatureException
 import java.security.spec.X509EncodedKeySpec
-import java.util.*
+import java.util.Base64
 import java.util.regex.Pattern
 import org.apache.avro.specific.SpecificRecordBase
 import org.apache.kafka.clients.consumer.ConsumerRecord
@@ -28,7 +34,6 @@ import org.springframework.stereotype.Component
 // Only instantiate when no other bean has been configured
 @ConditionalOnMissingBean(MessageSigner::class)
 class MessageSigner(properties: MessageSigningProperties) {
-
     val signingEnabled: Boolean = properties.signingEnabled
     private val stripAvroHeader: Boolean = properties.stripAvroHeader
 
@@ -90,6 +95,16 @@ class MessageSigner(properties: MessageSigningProperties) {
         return producerRecord
     }
 
+    fun signByteArrayRecordUsingHeader(
+        producerRecord: ProducerRecord<String, ByteArray>
+    ): ProducerRecord<String, ByteArray> {
+        if (signingEnabled) {
+            val signature = signatureByteArray(producerRecord)
+            producerRecord.headers().add(RECORD_HEADER_KEY_SIGNATURE, signature.array())
+        }
+        return producerRecord
+    }
+
     /**
      * Determines the signature for the given `message`.
      *
@@ -104,16 +119,14 @@ class MessageSigner(properties: MessageSigningProperties) {
      * @throws UncheckedSecurityException if the signing process throws a SignatureException.
      */
     private fun signature(message: FlexibleSignableMessageWrapper<*>): ByteBuffer {
-        check(canSignMessages()) {
-            "This MessageSigner is not configured for signing, it can only be used for verification"
-        }
+        check(canSignMessages()) { KEY_NOT_FOR_SIGNING }
         val oldSignature = message.getSignature()
         message.clearSignature()
         val byteBuffer = toByteBuffer(message)
         try {
             return signature(byteBuffer)
         } catch (e: SignatureException) {
-            throw UncheckedSecurityException("Unable to sign message", e)
+            throw UncheckedSecurityException(UNABLE_TO_SIGN_MESSAGE, e)
         } finally {
             oldSignature?.let { message.setSignature(it) }
         }
@@ -133,15 +146,23 @@ class MessageSigner(properties: MessageSigningProperties) {
      * @throws UncheckedSecurityException if the signing process throws a SignatureException.
      */
     private fun signature(producerRecord: ProducerRecord<String, out SpecificRecordBase>): ByteBuffer {
-        check(canSignMessages()) {
-            "This MessageSigner is not configured for signing, it can only be used for verification"
-        }
+        check(canSignMessages()) { KEY_NOT_FOR_SIGNING }
         val specificRecordBase = producerRecord.value()
         val byteBuffer = toByteBuffer(specificRecordBase)
         try {
             return signature(byteBuffer)
         } catch (e: SignatureException) {
-            throw UncheckedSecurityException("Unable to sign message", e)
+            throw UncheckedSecurityException(UNABLE_TO_SIGN_MESSAGE, e)
+        }
+    }
+
+    private fun signatureByteArray(producerRecord: ProducerRecord<String, ByteArray>): ByteBuffer {
+        check(canSignMessages()) { KEY_NOT_FOR_SIGNING }
+        val byteBuffer = ByteBuffer.wrap(producerRecord.value())
+        try {
+            return signature(byteBuffer)
+        } catch (e: SignatureException) {
+            throw UncheckedSecurityException(UNABLE_TO_SIGN_MESSAGE, e)
         }
     }
 
@@ -169,7 +190,7 @@ class MessageSigner(properties: MessageSigningProperties) {
      */
     fun <T> verifyUsingField(message: FlexibleSignableMessageWrapper<T>): Boolean {
         if (!canVerifyMessageSignatures()) {
-            logger.error("This MessageSigner is not configured for verification, it can only be used for signing")
+            logger.error(KEY_NOT_FOR_VERIFICATION)
             return false
         }
 
@@ -184,7 +205,7 @@ class MessageSigner(properties: MessageSigningProperties) {
             message.clearSignature()
             return verifySignatureBytes(messageSignature, toByteBuffer(message))
         } catch (e: Exception) {
-            logger.error("Unable to verify message signature", e)
+            logger.error(UNABLE_TO_VERIFY_SIGNATURE, e)
             return false
         } finally {
             message.setSignature(messageSignature)
@@ -199,7 +220,7 @@ class MessageSigner(properties: MessageSigningProperties) {
      */
     fun verifyUsingHeader(consumerRecord: ConsumerRecord<String, out SpecificRecordBase>): Boolean {
         if (!canVerifyMessageSignatures()) {
-            logger.error("This MessageSigner is not configured for verification, it can only be used for signing")
+            logger.error(KEY_NOT_FOR_VERIFICATION)
             return false
         }
 
@@ -219,7 +240,33 @@ class MessageSigner(properties: MessageSigningProperties) {
             val specificRecordBase: SpecificRecordBase = consumerRecord.value()
             return verifySignatureBytes(ByteBuffer.wrap(signatureBytes), toByteBuffer(specificRecordBase))
         } catch (e: Exception) {
-            logger.error("Unable to verify message signature", e)
+            logger.error(UNABLE_TO_VERIFY_SIGNATURE, e)
+            return false
+        }
+    }
+
+    fun verifyByteArrayRecordUsingHeader(consumerRecord: ConsumerRecord<String, ByteArray>): Boolean {
+        if (!canVerifyMessageSignatures()) {
+            logger.error(KEY_NOT_FOR_VERIFICATION)
+            return false
+        }
+
+        val header = consumerRecord.headers().lastHeader(RECORD_HEADER_KEY_SIGNATURE)
+        if (header == null) {
+            logger.error("This ProducerRecord does not contain a signature header")
+            return false
+        }
+
+        val signatureBytes = header.value()
+        if (signatureBytes == null || signatureBytes.isEmpty()) {
+            logger.error("Signature header is empty")
+            return false
+        }
+
+        try {
+            return verifySignatureBytes(ByteBuffer.wrap(signatureBytes), ByteBuffer.wrap(consumerRecord.value()))
+        } catch (e: Exception) {
+            logger.error(UNABLE_TO_VERIFY_SIGNATURE, e)
             return false
         }
     }
@@ -245,7 +292,7 @@ class MessageSigner(properties: MessageSigningProperties) {
 
     private fun stripAvroHeader(bytes: ByteBuffer): ByteBuffer {
         if (hasAvroHeader(bytes)) {
-            return ByteBuffer.wrap(Arrays.copyOfRange(bytes.array(), AVRO_HEADER_LENGTH, bytes.array().size))
+            return ByteBuffer.wrap(bytes.array().copyOfRange(AVRO_HEADER_LENGTH, bytes.array().size))
         }
         return bytes
     }
@@ -288,6 +335,13 @@ class MessageSigner(properties: MessageSigningProperties) {
         const val RECORD_HEADER_KEY_SIGNATURE: String = "signature"
 
         private val PEM_REMOVAL_PATTERN: Pattern = Pattern.compile("-----(?:BEGIN|END) .*?-----|\\r|\\n")
+
+        const val KEY_NOT_FOR_SIGNING =
+            "This MessageSigner is not configured for signing, it can only be used for verification"
+        const val KEY_NOT_FOR_VERIFICATION =
+            "This MessageSigner is not configured for verification, it can only be used for signing"
+        const val UNABLE_TO_SIGN_MESSAGE = "Unable to sign message"
+        const val UNABLE_TO_VERIFY_SIGNATURE = "Unable to verify message signature"
 
         val logger: Logger = LoggerFactory.getLogger(this::class.java)
 
