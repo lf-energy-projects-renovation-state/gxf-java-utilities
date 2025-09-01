@@ -7,11 +7,7 @@ import com.gxf.utilities.oslp.message.signing.configuration.SigningProperties
 import io.github.oshai.kotlinlogging.KotlinLogging
 import java.security.SecureRandom
 import java.security.Signature
-import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
-import org.springframework.stereotype.Component
 
-@Component
-@ConditionalOnMissingBean(SigningUtil::class)
 class SigningUtil(val signingConfiguration: SigningProperties, private val keyProvider: KeyProvider) {
     private val logger = KotlinLogging.logger {}
 
