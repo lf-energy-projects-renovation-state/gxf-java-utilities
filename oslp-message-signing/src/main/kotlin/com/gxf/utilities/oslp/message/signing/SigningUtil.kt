@@ -8,7 +8,7 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import java.security.SecureRandom
 import java.security.Signature
 
-class SigningUtil(val signingConfiguration: SigningProperties, private val keyProvider: KeyProvider) {
+open class SigningUtil(val signingConfiguration: SigningProperties, val keyProvider: KeyProvider) {
     private val logger = KotlinLogging.logger {}
 
     fun createSignature(message: ByteArray): ByteArray {
