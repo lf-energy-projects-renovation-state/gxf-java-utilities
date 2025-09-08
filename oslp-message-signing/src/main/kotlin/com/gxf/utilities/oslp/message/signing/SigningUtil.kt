@@ -5,27 +5,29 @@ package com.gxf.utilities.oslp.message.signing
 
 import com.gxf.utilities.oslp.message.signing.configuration.SigningProperties
 import io.github.oshai.kotlinlogging.KotlinLogging
+import java.security.PrivateKey
+import java.security.PublicKey
 import java.security.SecureRandom
 import java.security.Signature
 
-open class SigningUtil(val signingConfiguration: SigningProperties, val keyProvider: KeyProvider) {
+open class SigningUtil(val signingConfiguration: SigningProperties) {
     private val logger = KotlinLogging.logger {}
 
-    fun createSignature(message: ByteArray): ByteArray {
+    fun createSignature(message: ByteArray, privateKey: PrivateKey): ByteArray {
         logger.debug { "Creating signature for message of length: ${message.size}" }
         return Signature.getInstance(signingConfiguration.securityAlgorithm, signingConfiguration.securityProvider)
             .apply {
-                initSign(keyProvider.getPrivateKey(), SecureRandom())
+                initSign(privateKey, SecureRandom())
                 update(message)
             }
             .sign()
     }
 
-    fun verifySignature(message: ByteArray, securityKey: ByteArray): Boolean {
+    fun verifySignature(message: ByteArray, securityKey: ByteArray, publicKey: PublicKey): Boolean {
         logger.debug { "Verifying signature for message of length: ${message.size}" }
         val builder =
             Signature.getInstance(signingConfiguration.securityAlgorithm, signingConfiguration.securityProvider).apply {
-                initVerify(keyProvider.getPublicKey())
+                initVerify(publicKey)
                 update(message)
             }
 
