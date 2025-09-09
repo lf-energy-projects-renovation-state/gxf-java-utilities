@@ -33,6 +33,7 @@ springBootStarterTest = { group = "org.springframework.boot", name = "spring-boo
 springBootTest = { group = "org.springframework.boot", name = "spring-boot-test" }
 springContext = { group = "org.springframework", name = "spring-context" }
 springKafka = { group = "org.springframework.kafka", name = "spring-kafka" }
+springKafkaTest = { group = "org.springframework.kafka", name = "spring-kafka-test" }
 springTest = { group = "org.springframework", name = "spring-test" }
 
 [plugins]

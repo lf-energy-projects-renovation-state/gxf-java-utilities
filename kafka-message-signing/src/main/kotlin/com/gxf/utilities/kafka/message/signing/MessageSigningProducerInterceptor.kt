@@ -6,8 +6,9 @@ package com.gxf.utilities.kafka.message.signing
 import org.apache.kafka.clients.producer.ProducerInterceptor
 import org.apache.kafka.clients.producer.ProducerRecord
 
-class MessageSigningProducerInterceptor(private val messageSigner: MessageSigner) :
-    ProducerInterceptor<String, ByteArray> {
+class MessageSigningProducerInterceptor() : ProducerInterceptor<String, ByteArray> {
+    private lateinit var messageSigner: MessageSigner
+
     override fun onSend(producerRecord: ProducerRecord<String, ByteArray>): ProducerRecord<String, ByteArray> =
         messageSigner.signByteArrayRecordUsingHeader(producerRecord)
 
@@ -20,6 +21,6 @@ class MessageSigningProducerInterceptor(private val messageSigner: MessageSigner
     }
 
     override fun configure(configs: MutableMap<String, *>?) {
-        // No-op
+        messageSigner = (configs?.get("message.signer") ?: throw Exception()) as MessageSigner
     }
 }

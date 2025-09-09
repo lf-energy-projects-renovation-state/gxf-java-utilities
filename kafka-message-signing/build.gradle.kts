@@ -25,3 +25,19 @@ dependencies {
 tasks.test {
     useJUnitPlatform()
 }
+
+testing {
+    suites {
+        val integrationTest by registering(JvmTestSuite::class) {
+            useJUnitJupiter()
+            dependencies {
+                implementation(project())
+                implementation(libs.springBootStarterTest)
+                implementation(libs.springKafka)
+                implementation(libs.springKafkaTest)
+                implementation(libs.kafkaClients)
+                implementation(libs.assertJ)
+            }
+        }
+    }
+}

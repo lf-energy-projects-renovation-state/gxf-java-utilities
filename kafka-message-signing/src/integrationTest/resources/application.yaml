@@ -1,0 +1,5 @@
+message-signing:
+  signing-enabled: true
+  strip-avro-header: false
+  private-key-file: classpath:rsa-private.pem
+  public-key-file: classpath:rsa-public.pem
