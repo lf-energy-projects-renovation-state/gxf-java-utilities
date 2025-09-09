@@ -223,20 +223,8 @@ class MessageSigner(properties: MessageSigningProperties) {
             logger.error(KEY_NOT_FOR_VERIFICATION)
             return false
         }
-
-        val header = consumerRecord.headers().lastHeader(RECORD_HEADER_KEY_SIGNATURE)
-        if (header == null) {
-            logger.error("This ProducerRecord does not contain a signature header")
-            return false
-        }
-
-        val signatureBytes = header.value()
-        if (signatureBytes == null || signatureBytes.isEmpty()) {
-            logger.error("Signature header is empty")
-            return false
-        }
-
         try {
+            val signatureBytes = getSignatureBytes(consumerRecord)
             val specificRecordBase: SpecificRecordBase = consumerRecord.value()
             return verifySignatureBytes(ByteBuffer.wrap(signatureBytes), toByteBuffer(specificRecordBase))
         } catch (e: Exception) {
@@ -246,29 +234,27 @@ class MessageSigner(properties: MessageSigningProperties) {
     }
 
     fun verifyByteArrayRecordUsingHeader(consumerRecord: ConsumerRecord<String, ByteArray>): Boolean {
-        if (!canVerifyMessageSignatures()) {
-            logger.error(KEY_NOT_FOR_VERIFICATION)
-            return false
-        }
-
-        val header = consumerRecord.headers().lastHeader(RECORD_HEADER_KEY_SIGNATURE)
-        if (header == null) {
-            logger.error("This ProducerRecord does not contain a signature header")
-            return false
-        }
-
-        val signatureBytes = header.value()
-        if (signatureBytes == null || signatureBytes.isEmpty()) {
-            logger.error("Signature header is empty")
-            return false
-        }
-
         try {
+            if (!canVerifyMessageSignatures()) {
+                logger.error(KEY_NOT_FOR_VERIFICATION)
+                return false
+            }
+            val signatureBytes = getSignatureBytes(consumerRecord)
             return verifySignatureBytes(ByteBuffer.wrap(signatureBytes), ByteBuffer.wrap(consumerRecord.value()))
         } catch (e: Exception) {
             logger.error(UNABLE_TO_VERIFY_SIGNATURE, e)
             return false
         }
+    }
+
+    private fun <ValueType : Any> getSignatureBytes(consumerRecord: ConsumerRecord<String, ValueType>): ByteArray {
+        val header =
+            consumerRecord.headers().lastHeader(RECORD_HEADER_KEY_SIGNATURE)
+                ?: throw IllegalArgumentException("This ConsumerRecord does not contain a signature header")
+
+        val signatureBytes = header.value()
+        require(!(signatureBytes == null || signatureBytes.isEmpty())) { "Signature header is empty" }
+        return signatureBytes
     }
 
     @Throws(SignatureException::class)
