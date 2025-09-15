@@ -37,6 +37,8 @@ testing {
                 implementation(libs.springKafkaTest)
                 implementation(libs.kafkaClients)
                 implementation(libs.assertJ)
+                implementation(libs.avro)
+                implementation(project(":kafka-avro"))
             }
         }
     }

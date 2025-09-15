@@ -14,7 +14,7 @@ import org.junit.jupiter.api.extension.ExtendWith
 
 @ExtendWith(MockKExtension::class)
 class MessageSigningProducerInterceptorTest {
-    @InjectMockKs private lateinit var interceptor: MessageSigningProducerInterceptor
+    @InjectMockKs private lateinit var interceptor: MessageSigningByteArrayProducerInterceptor
     @MockK private lateinit var messageSigner: MessageSigner
 
     @Test
