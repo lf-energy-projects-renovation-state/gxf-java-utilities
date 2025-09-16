@@ -6,8 +6,8 @@ package com.gxf.utilities.kafka.message
 import com.gxf.utilities.kafka.avro.AvroDeserializer
 import com.gxf.utilities.kafka.avro.AvroSerializer
 import com.gxf.utilities.kafka.message.signing.MessageSigner
-import com.gxf.utilities.kafka.message.signing.MessageSigningAvroProducerInterceptor
-import com.gxf.utilities.kafka.message.signing.MessageSigningByteArrayProducerInterceptor
+import com.gxf.utilities.kafka.message.signing.interceptors.MessageSigningAvroProducerInterceptor
+import com.gxf.utilities.kafka.message.signing.interceptors.MessageSigningByteArrayProducerInterceptor
 import java.util.UUID
 import org.apache.avro.Schema
 import org.apache.avro.specific.SpecificRecordBase

@@ -1,8 +1,9 @@
 // SPDX-FileCopyrightText: Copyright Contributors to the GXF project
 //
 // SPDX-License-Identifier: Apache-2.0
-package com.gxf.utilities.kafka.message.signing
+package com.gxf.utilities.kafka.message.signing.interceptors
 
+import com.gxf.utilities.kafka.message.signing.MessageSigner
 import org.apache.avro.specific.SpecificRecordBase
 import org.apache.kafka.clients.producer.ProducerInterceptor
 import org.apache.kafka.clients.producer.ProducerRecord

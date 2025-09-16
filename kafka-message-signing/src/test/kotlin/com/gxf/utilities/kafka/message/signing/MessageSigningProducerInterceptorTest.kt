@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 package com.gxf.utilities.kafka.message.signing
 
+import com.gxf.utilities.kafka.message.signing.interceptors.MessageSigningByteArrayProducerInterceptor
 import io.mockk.every
 import io.mockk.impl.annotations.InjectMockKs
 import io.mockk.impl.annotations.MockK
