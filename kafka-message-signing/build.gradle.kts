@@ -17,11 +17,29 @@ dependencies {
     testImplementation(libs.springTest)
     testImplementation(libs.springBootTest)
     testImplementation(libs.springBootStarter)
-    testImplementation(libs.mockitoKotlin)
+    testImplementation(libs.mockk)
 
     testRuntimeOnly(libs.junitPlatformLauncher)
 }
 
 tasks.test {
     useJUnitPlatform()
+}
+
+testing {
+    suites {
+        val integrationTest by registering(JvmTestSuite::class) {
+            useJUnitJupiter()
+            dependencies {
+                implementation(project())
+                implementation(libs.springBootStarterTest)
+                implementation(libs.springKafka)
+                implementation(libs.springKafkaTest)
+                implementation(libs.kafkaClients)
+                implementation(libs.assertJ)
+                implementation(libs.avro)
+                implementation(project(":kafka-avro"))
+            }
+        }
+    }
 }
