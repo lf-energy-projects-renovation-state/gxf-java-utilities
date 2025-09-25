@@ -1,5 +1,4 @@
 dependencies {
-    implementation(libs.kotlinLoggingJvm)
     implementation(libs.slf4jApi)
 
     testImplementation(libs.junitJupiterApi)

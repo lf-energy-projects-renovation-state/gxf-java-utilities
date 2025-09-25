@@ -40,4 +40,17 @@ class SigningUtilTest {
         val signature = signingUtil.createSignature(message, keyPair1.private)
         assertThat(signingUtil.verifySignature(message, signature, keyPair2.public)).isFalse()
     }
+
+    @Test
+    fun `should also pass for other algorithms that do not require truncation`() {
+        val keyPairGenerator: KeyPairGenerator = KeyPairGenerator.getInstance("RSA").apply { initialize(2048) }
+        val keyPair: KeyPair = keyPairGenerator.generateKeyPair()
+
+        val rsaSigningUtil: SigningUtil =
+            SigningUtil(SigningProperties(securityProvider = "SunRsaSign", securityAlgorithm = "SHA256withRSA"))
+
+        val message = "test-message".toByteArray()
+        val signature = rsaSigningUtil.createSignature(message, keyPair.private)
+        assertThat(rsaSigningUtil.verifySignature(message, signature, keyPair.public)).isTrue()
+    }
 }
