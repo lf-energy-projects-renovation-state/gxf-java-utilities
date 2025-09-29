@@ -67,13 +67,16 @@ class MessageSigner(properties: MessageSigningProperties) {
      * @throws UncheckedIOException if determining the bytes for the message throws an IOException.
      * @throws UncheckedSecurityException if the signing process throws a SignatureException.
      */
-    fun <T> signUsingField(message: FlexibleSignableMessageWrapper<T>): T {
+    fun <T> signUsingField(message: FlexibleSignableMessageWrapper<T>, key: PrivateKey? = signingKey): T {
         if (signingEnabled) {
-            val signatureBytes = signature(message, signingKey)
+            val signatureBytes = signature(message, key)
             message.setSignature(signatureBytes)
         }
         return message.message
     }
+
+    fun <T> signUsingFieldWithPreviousKey(message: FlexibleSignableMessageWrapper<T>): T =
+        signUsingField(message, previousSigningKey)
 
     /**
      * Signs the provided `producerRecord` in the header, overwriting an existing signature, if a non-null value is
@@ -88,20 +91,26 @@ class MessageSigner(properties: MessageSigningProperties) {
      * @throws UncheckedSecurityException if the signing process throws a SignatureException.
      */
     fun <ValueType : SpecificRecordBase> signUsingHeader(
-        producerRecord: ProducerRecord<String, ValueType>
+        producerRecord: ProducerRecord<String, ValueType>,
+        key: PrivateKey? = signingKey,
     ): ProducerRecord<String, ValueType> {
         if (signingEnabled) {
-            val signature = signature(producerRecord, signingKey)
+            val signature = signature(producerRecord, key)
             producerRecord.headers().add(RECORD_HEADER_KEY_SIGNATURE, signature.array())
         }
         return producerRecord
     }
 
+    fun <ValueType : SpecificRecordBase> signUsingHeaderWithPreviousKey(
+        producerRecord: ProducerRecord<String, ValueType>
+    ): ProducerRecord<String, ValueType> = signUsingHeader(producerRecord, previousSigningKey)
+
     fun signByteArrayRecordUsingHeader(
-        producerRecord: ProducerRecord<String, ByteArray>
+        producerRecord: ProducerRecord<String, ByteArray>,
+        key: PrivateKey? = signingKey,
     ): ProducerRecord<String, ByteArray> {
         if (signingEnabled) {
-            val signature = signatureByteArray(producerRecord, signingKey)
+            val signature = signatureByteArray(producerRecord, key)
             producerRecord.headers().add(RECORD_HEADER_KEY_SIGNATURE, signature.array())
         }
         return producerRecord
@@ -109,13 +118,7 @@ class MessageSigner(properties: MessageSigningProperties) {
 
     fun signByteArrayRecordUsingHeaderWithPreviousKey(
         producerRecord: ProducerRecord<String, ByteArray>
-    ): ProducerRecord<String, ByteArray> {
-        if (signingEnabled) {
-            val signature = signatureByteArray(producerRecord, previousSigningKey)
-            producerRecord.headers().add(RECORD_HEADER_KEY_SIGNATURE, signature.array())
-        }
-        return producerRecord
-    }
+    ): ProducerRecord<String, ByteArray> = signByteArrayRecordUsingHeader(producerRecord, previousSigningKey)
 
     /**
      * Determines the signature for the given `message`.
@@ -203,8 +206,8 @@ class MessageSigner(properties: MessageSigningProperties) {
      * @param message the message to be verified
      * @return `true` if the signature of the given `message` was verified; `false` if not.
      */
-    fun <T> verifyUsingField(message: FlexibleSignableMessageWrapper<T>): Boolean {
-        if (!canVerifyMessageSignatures(verificationKey)) {
+    fun <T> verifyUsingField(message: FlexibleSignableMessageWrapper<T>, key: PublicKey? = verificationKey): Boolean {
+        if (!canVerifyMessageSignatures(key)) {
             logger.error(KEY_NOT_FOR_VERIFICATION)
             return false
         }
@@ -218,7 +221,7 @@ class MessageSigner(properties: MessageSigningProperties) {
 
         try {
             message.clearSignature()
-            return verifySignatureBytes(messageSignature, toByteBuffer(message), verificationKey!!)
+            return verifySignatureBytes(messageSignature, toByteBuffer(message), key!!)
         } catch (e: Exception) {
             logger.error(UNABLE_TO_VERIFY_SIGNATURE, e)
             return false
@@ -227,66 +230,55 @@ class MessageSigner(properties: MessageSigningProperties) {
         }
     }
 
+    fun <T> verifyUsingFieldWithPreviousKey(message: FlexibleSignableMessageWrapper<T>): Boolean =
+        verifyUsingField(message, previousVerificationKey)
+
     /**
      * Verifies the signature of the provided `consumerRecord` using the signature from the message header.
      *
      * @param consumerRecord the record to be verified
      * @return `true` if the signature of the given `consumerRecord` was verified; `false` if not. SignatureException.
      */
-    fun verifyUsingHeader(consumerRecord: ConsumerRecord<String, out SpecificRecordBase>): Boolean {
-        if (!canVerifyMessageSignatures(verificationKey)) {
+    fun verifyUsingHeader(
+        consumerRecord: ConsumerRecord<String, out SpecificRecordBase>,
+        key: PublicKey? = verificationKey,
+    ): Boolean {
+        if (!canVerifyMessageSignatures(key)) {
             logger.error(KEY_NOT_FOR_VERIFICATION)
             return false
         }
         try {
             val signatureBytes = getSignatureBytes(consumerRecord)
             val specificRecordBase: SpecificRecordBase = consumerRecord.value()
-            return verifySignatureBytes(
-                ByteBuffer.wrap(signatureBytes),
-                toByteBuffer(specificRecordBase),
-                verificationKey!!,
-            )
+            return verifySignatureBytes(ByteBuffer.wrap(signatureBytes), toByteBuffer(specificRecordBase), key!!)
         } catch (e: Exception) {
             logger.error(UNABLE_TO_VERIFY_SIGNATURE, e)
             return false
         }
     }
 
-    fun verifyByteArrayRecordUsingHeader(consumerRecord: ConsumerRecord<String, ByteArray>): Boolean {
+    fun verifyUsingHeaderWithPreviousKey(consumerRecord: ConsumerRecord<String, out SpecificRecordBase>): Boolean =
+        verifyUsingHeader(consumerRecord, previousVerificationKey)
+
+    fun verifyByteArrayRecordUsingHeader(
+        consumerRecord: ConsumerRecord<String, ByteArray>,
+        key: PublicKey? = verificationKey,
+    ): Boolean {
         try {
-            if (!canVerifyMessageSignatures(verificationKey)) {
+            if (!canVerifyMessageSignatures(key)) {
                 logger.error(KEY_NOT_FOR_VERIFICATION)
                 return false
             }
             val signatureBytes = getSignatureBytes(consumerRecord)
-            return verifySignatureBytes(
-                ByteBuffer.wrap(signatureBytes),
-                ByteBuffer.wrap(consumerRecord.value()),
-                verificationKey!!,
-            )
+            return verifySignatureBytes(ByteBuffer.wrap(signatureBytes), ByteBuffer.wrap(consumerRecord.value()), key!!)
         } catch (e: Exception) {
             logger.error(UNABLE_TO_VERIFY_SIGNATURE, e)
             return false
         }
     }
 
-    fun verifyByteArrayRecordUsingHeaderWithPreviousKey(consumerRecord: ConsumerRecord<String, ByteArray>): Boolean {
-        if (!canVerifyMessageSignatures(previousVerificationKey)) {
-            logger.error(KEY_NOT_FOR_VERIFICATION)
-            return false
-        }
-        try {
-            val signatureBytes = getSignatureBytes(consumerRecord)
-            return verifySignatureBytes(
-                ByteBuffer.wrap(signatureBytes),
-                ByteBuffer.wrap(consumerRecord.value()),
-                previousVerificationKey!!,
-            )
-        } catch (e: Exception) {
-            logger.error(UNABLE_TO_VERIFY_SIGNATURE, e)
-            return false
-        }
-    }
+    fun verifyByteArrayRecordUsingHeaderWithPreviousKey(consumerRecord: ConsumerRecord<String, ByteArray>): Boolean =
+        verifyByteArrayRecordUsingHeader(consumerRecord, previousVerificationKey)
 
     private fun <ValueType : Any> getSignatureBytes(consumerRecord: ConsumerRecord<String, ValueType>): ByteArray {
         val header =

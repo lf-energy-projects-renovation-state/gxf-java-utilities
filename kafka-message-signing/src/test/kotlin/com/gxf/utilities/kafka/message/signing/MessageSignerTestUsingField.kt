@@ -48,6 +48,15 @@ class MessageSignerTestUsingField {
     }
 
     @Test
+    fun verifiesMessagesSignedWithPreviousKey() {
+        val message = messageSignedWithPreviousKey()
+
+        val signatureWasVerified = messageSigner.verifyUsingFieldWithPreviousKey(message)
+
+        assertThat(signatureWasVerified).isTrue()
+    }
+
+    @Test
     fun doesNotVerifyMessagesWithoutSignature() {
         val messageWrapper = messageWrapper()
 
@@ -95,6 +104,12 @@ class MessageSignerTestUsingField {
     private fun properlySignedMessage(): FlexibleSignableMessageWrapper<MessageWithSignature> {
         val messageWrapper = messageWrapper()
         messageSigner.signUsingField(messageWrapper)
+        return messageWrapper
+    }
+
+    private fun messageSignedWithPreviousKey(): FlexibleSignableMessageWrapper<MessageWithSignature> {
+        val messageWrapper = messageWrapper()
+        messageSigner.signUsingFieldWithPreviousKey(messageWrapper)
         return messageWrapper
     }
 

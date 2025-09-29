@@ -52,6 +52,15 @@ class MessageSignerTestUsingHeader {
     }
 
     @Test
+    fun verifiesRecordsSignedWithPreviousKey() {
+        val signedRecord = recordSignedWithPreviousKey()
+
+        val result = messageSigner.verifyUsingHeaderWithPreviousKey(signedRecord)
+
+        assertThat(result).isTrue()
+    }
+
+    @Test
     fun doesNotVerifyRecordsWithoutSignature() {
         val consumerRecord = consumerRecord()
 
@@ -74,6 +83,12 @@ class MessageSignerTestUsingHeader {
     private fun properlySignedRecord(): ConsumerRecord<String, Message> {
         val producerRecord = producerRecord()
         messageSigner.signUsingHeader(producerRecord)
+        return producerRecordToConsumerRecord(producerRecord)
+    }
+
+    private fun recordSignedWithPreviousKey(): ConsumerRecord<String, Message> {
+        val producerRecord = producerRecord()
+        messageSigner.signUsingHeaderWithPreviousKey(producerRecord)
         return producerRecordToConsumerRecord(producerRecord)
     }
 
