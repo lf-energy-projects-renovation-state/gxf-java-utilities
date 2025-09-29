@@ -48,6 +48,15 @@ class MessageSignerTestByteArrayUsingHeader {
     }
 
     @Test
+    fun verifiesRecordsSignedWithPreviousKey() {
+        val signedRecord = byteArrayRecordSignedWithPreviousKey()
+
+        val result = messageSigner.verifyByteArrayRecordUsingHeaderWithPreviousKey(signedRecord)
+
+        assertThat(result).isTrue()
+    }
+
+    @Test
     fun doesNotVerifyRecordsWithoutSignature() {
         val consumerRecord = consumerRecordByteArray()
 
@@ -75,6 +84,12 @@ class MessageSignerTestByteArrayUsingHeader {
     private fun properlySignedByteArrayRecord(): ConsumerRecord<String, ByteArray> {
         val producerRecord = producerRecordByteArray()
         messageSigner.signByteArrayRecordUsingHeader(producerRecord)
+        return producerRecordToConsumerRecord(producerRecord)
+    }
+
+    private fun byteArrayRecordSignedWithPreviousKey(): ConsumerRecord<String, ByteArray> {
+        val producerRecord = producerRecordByteArray()
+        messageSigner.signByteArrayRecordUsingHeaderWithPreviousKey(producerRecord)
         return producerRecordToConsumerRecord(producerRecord)
     }
 

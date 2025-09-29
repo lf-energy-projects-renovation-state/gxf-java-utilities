@@ -1,3 +1,6 @@
+# This file is only used in @SpringBootTests.
+# For unit tests, use TestConstants.messageSignerProperties() for to mock the MessageSignerProperties class.
+
 message-signing:
   signing-enabled: true
   strip-avro-header: true

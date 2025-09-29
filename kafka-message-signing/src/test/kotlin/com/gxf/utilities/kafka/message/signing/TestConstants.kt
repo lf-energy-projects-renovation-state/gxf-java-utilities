@@ -18,6 +18,8 @@ object TestConstants {
             keyAlgorithm = "RSA",
             privateKeyFile = ClassPathResource("/rsa-private.pem"),
             publicKeyFile = ClassPathResource("/rsa-public.pem"),
+            previousPublicKeyFile = ClassPathResource("/rsa-public-previous.pem"),
+            previousPrivateKeyFile = ClassPathResource("/rsa-private-previous.pem"),
         )
 
     fun randomSignature(): ByteBuffer {
