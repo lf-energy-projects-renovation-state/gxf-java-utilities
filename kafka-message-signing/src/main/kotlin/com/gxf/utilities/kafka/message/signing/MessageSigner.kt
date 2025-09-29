@@ -54,12 +54,19 @@ class MessageSigner(properties: MessageSigningProperties) {
         }
     }
 
+    /**
+     * Determines if this message signer is capable of signing messages.
+     *
+     * @param key the private key to use for signing. If `null`, the configured signing key will be used.
+     * @return `true` if this message signer is configured for signing and has a private key; `false` if not.
+     */
     fun canSignMessages(key: PrivateKey? = signingKey): Boolean = signingEnabled && key != null
 
     /**
      * Signs the provided `message`, overwriting an existing signature field inside the message object.
      *
      * @param message the message to be signed
+     * @param key the private key to use for signing. If `null`, the configured signing key will be used.
      * @return Returns the signed (unwrapped) message. If signing is disabled through configuration, the message will be
      *   returned unchanged.
      * @throws IllegalStateException if this message signer has a public key for signature verification, but does not
@@ -75,6 +82,10 @@ class MessageSigner(properties: MessageSigningProperties) {
         return message.message
     }
 
+    /**
+     * Signs the provided `message` using the previous signing key, overwriting an existing signature field inside the
+     * message object.
+     */
     fun <T> signUsingFieldWithPreviousKey(message: FlexibleSignableMessageWrapper<T>): T =
         signUsingField(message, previousSigningKey)
 
@@ -83,6 +94,7 @@ class MessageSigner(properties: MessageSigningProperties) {
      * already set.
      *
      * @param producerRecord the record to be signed
+     * @param key the private key to use for signing. If `null`, the configured signing key will be used.
      * @return Returns the record with a signature in the header. If signing is disabled through configuration, the
      *   record will be returned unchanged.
      * @throws IllegalStateException if this message signer has a public key for signature verification, but does not
@@ -101,10 +113,27 @@ class MessageSigner(properties: MessageSigningProperties) {
         return producerRecord
     }
 
+    /**
+     * Signs the provided `producerRecord` in the header, using the previous signing key, overwriting an existing
+     * signature, if a non-null value is already set.
+     */
     fun <ValueType : SpecificRecordBase> signUsingHeaderWithPreviousKey(
         producerRecord: ProducerRecord<String, ValueType>
     ): ProducerRecord<String, ValueType> = signUsingHeader(producerRecord, previousSigningKey)
 
+    /**
+     * Signs the provided `producerRecord` in the header, overwriting an existing signature, if a non-null value is
+     * already set.
+     *
+     * @param producerRecord the record to be signed
+     * @param key the private key to use for signing. If `null`, the configured signing key will be used.
+     * @return Returns the record with a signature in the header. If signing is disabled through configuration, the
+     *   record will be returned unchanged.
+     * @throws IllegalStateException if this message signer has a public key for signature verification, but does not
+     *   have the private key needed for signing messages.
+     * @throws UncheckedIOException if determining the bytes for the message throws an IOException.
+     * @throws UncheckedSecurityException if the signing process throws a SignatureException.
+     */
     fun signByteArrayRecordUsingHeader(
         producerRecord: ProducerRecord<String, ByteArray>,
         key: PrivateKey? = signingKey,
@@ -116,6 +145,10 @@ class MessageSigner(properties: MessageSigningProperties) {
         return producerRecord
     }
 
+    /**
+     * Signs the provided `producerRecord` in the header, using the previous signing key, overwriting an existing
+     * signature, if a non-null value is already set.
+     */
     fun signByteArrayRecordUsingHeaderWithPreviousKey(
         producerRecord: ProducerRecord<String, ByteArray>
     ): ProducerRecord<String, ByteArray> = signByteArrayRecordUsingHeader(producerRecord, previousSigningKey)
@@ -127,6 +160,7 @@ class MessageSigner(properties: MessageSigningProperties) {
      * restored to its original value before this method returns.
      *
      * @param message the message to be signed
+     * @param key the private key to use for signing.
      * @return the signature for the message
      * @throws IllegalStateException if this message signer has a public key for signature verification, but does not
      *   have the private key needed for signing messages.
@@ -154,6 +188,7 @@ class MessageSigner(properties: MessageSigningProperties) {
      * restored to its original value before this method returns.
      *
      * @param producerRecord the record to be signed
+     * @param key the private key to use for signing.
      * @return the signature for the record
      * @throws IllegalStateException if this message signer has a public key for signature verification, but does not
      *   have the private key needed for signing messages.
@@ -196,6 +231,13 @@ class MessageSigner(properties: MessageSigningProperties) {
         return ByteBuffer.wrap(signingSignature.sign())
     }
 
+    /**
+     * Determines if this message signer is capable of verifying message signatures.
+     *
+     * @param key the public key to use for verification. If `null`, the configured verification key will be used.
+     * @return `true` if this message signer is configured for signature verification and has a public key; `false` if
+     *   not.
+     */
     fun canVerifyMessageSignatures(key: PublicKey? = verificationKey): Boolean {
         return signingEnabled && key != null
     }
@@ -204,6 +246,7 @@ class MessageSigner(properties: MessageSigningProperties) {
      * Verifies the signature of the provided `message` using the signature in a message field.
      *
      * @param message the message to be verified
+     * @param key the public key to use for verification. If `null`, the configured verification key will be used.
      * @return `true` if the signature of the given `message` was verified; `false` if not.
      */
     fun <T> verifyUsingField(message: FlexibleSignableMessageWrapper<T>, key: PublicKey? = verificationKey): Boolean {
@@ -230,6 +273,10 @@ class MessageSigner(properties: MessageSigningProperties) {
         }
     }
 
+    /**
+     * Verifies the signature of the provided `message` using the previous verification key and the signature in a
+     * message field.
+     */
     fun <T> verifyUsingFieldWithPreviousKey(message: FlexibleSignableMessageWrapper<T>): Boolean =
         verifyUsingField(message, previousVerificationKey)
 
@@ -237,7 +284,8 @@ class MessageSigner(properties: MessageSigningProperties) {
      * Verifies the signature of the provided `consumerRecord` using the signature from the message header.
      *
      * @param consumerRecord the record to be verified
-     * @return `true` if the signature of the given `consumerRecord` was verified; `false` if not. SignatureException.
+     * @param key the public key to use for verification. If `null`, the configured verification key will be used.
+     * @return `true` if the signature of the given `consumerRecord` was verified; `false` if not.
      */
     fun verifyUsingHeader(
         consumerRecord: ConsumerRecord<String, out SpecificRecordBase>,
@@ -257,9 +305,20 @@ class MessageSigner(properties: MessageSigningProperties) {
         }
     }
 
+    /**
+     * Verifies the signature of the provided `consumerRecord` using the previous verification key and the signature
+     * from the message header.
+     */
     fun verifyUsingHeaderWithPreviousKey(consumerRecord: ConsumerRecord<String, out SpecificRecordBase>): Boolean =
         verifyUsingHeader(consumerRecord, previousVerificationKey)
 
+    /**
+     * Verifies the signature of the provided `consumerRecord` using the signature from the message header.
+     *
+     * @param consumerRecord the record to be verified
+     * @param key the public key to use for verification. If `null`, the configured verification key will be used.
+     * @return `true` if the signature of the given `consumerRecord` was verified; `false` if not.
+     */
     fun verifyByteArrayRecordUsingHeader(
         consumerRecord: ConsumerRecord<String, ByteArray>,
         key: PublicKey? = verificationKey,
@@ -277,6 +336,10 @@ class MessageSigner(properties: MessageSigningProperties) {
         }
     }
 
+    /**
+     * Verifies the signature of the provided `consumerRecord` using the previous verification key and the signature
+     * from the message header.
+     */
     fun verifyByteArrayRecordUsingHeaderWithPreviousKey(consumerRecord: ConsumerRecord<String, ByteArray>): Boolean =
         verifyByteArrayRecordUsingHeader(consumerRecord, previousVerificationKey)
 
@@ -441,10 +504,6 @@ class MessageSigner(properties: MessageSigningProperties) {
     // For backwards compatibility
     @Deprecated("Call with FlexibleSignableMessageWrapper instead. This method will be removed in a future release.")
     fun <T> signUsingField(message: SignableMessageWrapper<T>): T = signUsingField(message.toFlexibleWrapper())
-
-    @Deprecated("Call with FlexibleSignableMessageWrapper instead. This method will be removed in a future release.")
-    private fun signature(message: SignableMessageWrapper<*>): ByteBuffer =
-        signature(message.toFlexibleWrapper(), signingKey)
 
     @Deprecated("Call with FlexibleSignableMessageWrapper instead. This method will be removed in a future release.")
     fun <T> verifyUsingField(message: SignableMessageWrapper<T>): Boolean =
