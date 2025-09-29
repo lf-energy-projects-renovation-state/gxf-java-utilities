@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 package com.gxf.utilities.kafka.message.signing
 
+import com.gxf.utilities.kafka.message.signing.TestConstants.previousPrivateKey
 import com.gxf.utilities.kafka.message.signing.TestHelper.producerRecordToConsumerRecord
 import org.apache.avro.Schema
 import org.apache.avro.specific.SpecificRecordBase
@@ -52,6 +53,15 @@ class MessageSignerTestUsingHeader {
     }
 
     @Test
+    fun verifiesRecordsSignedWithPreviousKey() {
+        val signedRecord = recordSignedWithPreviousKey()
+
+        val result = messageSigner.verifyUsingHeaderWithPreviousKey(signedRecord)
+
+        assertThat(result).isTrue()
+    }
+
+    @Test
     fun doesNotVerifyRecordsWithoutSignature() {
         val consumerRecord = consumerRecord()
 
@@ -74,6 +84,12 @@ class MessageSignerTestUsingHeader {
     private fun properlySignedRecord(): ConsumerRecord<String, Message> {
         val producerRecord = producerRecord()
         messageSigner.signUsingHeader(producerRecord)
+        return producerRecordToConsumerRecord(producerRecord)
+    }
+
+    private fun recordSignedWithPreviousKey(): ConsumerRecord<String, Message> {
+        val producerRecord = producerRecord()
+        messageSigner.signUsingHeader(producerRecord, previousPrivateKey)
         return producerRecordToConsumerRecord(producerRecord)
     }
 

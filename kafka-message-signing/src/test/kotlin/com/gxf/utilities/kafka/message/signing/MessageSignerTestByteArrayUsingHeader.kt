@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 package com.gxf.utilities.kafka.message.signing
 
+import com.gxf.utilities.kafka.message.signing.TestConstants.previousPrivateKey
 import com.gxf.utilities.kafka.message.signing.TestHelper.producerRecordToConsumerRecord
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.apache.kafka.clients.producer.ProducerRecord
@@ -48,6 +49,15 @@ class MessageSignerTestByteArrayUsingHeader {
     }
 
     @Test
+    fun verifiesRecordsSignedWithPreviousKey() {
+        val signedRecord = byteArrayRecordSignedWithPreviousKey()
+
+        val result = messageSigner.verifyByteArrayRecordUsingHeaderWithPreviousKey(signedRecord)
+
+        assertThat(result).isTrue()
+    }
+
+    @Test
     fun doesNotVerifyRecordsWithoutSignature() {
         val consumerRecord = consumerRecordByteArray()
 
@@ -75,6 +85,12 @@ class MessageSignerTestByteArrayUsingHeader {
     private fun properlySignedByteArrayRecord(): ConsumerRecord<String, ByteArray> {
         val producerRecord = producerRecordByteArray()
         messageSigner.signByteArrayRecordUsingHeader(producerRecord)
+        return producerRecordToConsumerRecord(producerRecord)
+    }
+
+    private fun byteArrayRecordSignedWithPreviousKey(): ConsumerRecord<String, ByteArray> {
+        val producerRecord = producerRecordByteArray()
+        messageSigner.signByteArrayRecordUsingHeader(producerRecord, previousPrivateKey)
         return producerRecordToConsumerRecord(producerRecord)
     }
 

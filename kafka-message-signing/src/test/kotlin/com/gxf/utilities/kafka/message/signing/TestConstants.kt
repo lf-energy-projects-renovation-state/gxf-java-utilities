@@ -18,7 +18,11 @@ object TestConstants {
             keyAlgorithm = "RSA",
             privateKeyFile = ClassPathResource("/rsa-private.pem"),
             publicKeyFile = ClassPathResource("/rsa-public.pem"),
+            previousPublicKeyFile = ClassPathResource("/rsa-public-previous.pem"),
         )
+
+    val previousPrivateKeyFile = ClassPathResource("/rsa-private-previous.pem")
+    val previousPrivateKey = MessageSigner.readPrivateKey(previousPrivateKeyFile)
 
     fun randomSignature(): ByteBuffer {
         val random: Random = SecureRandom()

@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 package com.gxf.utilities.kafka.message.signing
 
+import com.gxf.utilities.kafka.message.signing.TestConstants.previousPrivateKey
 import com.gxf.utilities.kafka.message.wrapper.FlexibleSignableMessageWrapper
 import java.nio.ByteBuffer
 import org.assertj.core.api.Assertions.assertThat
@@ -43,6 +44,15 @@ class MessageSignerTestUsingField {
         val message = properlySignedMessage()
 
         val signatureWasVerified = messageSigner.verifyUsingField(message)
+
+        assertThat(signatureWasVerified).isTrue()
+    }
+
+    @Test
+    fun verifiesMessagesSignedWithPreviousKey() {
+        val message = messageSignedWithPreviousKey()
+
+        val signatureWasVerified = messageSigner.verifyUsingFieldWithPreviousKey(message)
 
         assertThat(signatureWasVerified).isTrue()
     }
@@ -95,6 +105,12 @@ class MessageSignerTestUsingField {
     private fun properlySignedMessage(): FlexibleSignableMessageWrapper<MessageWithSignature> {
         val messageWrapper = messageWrapper()
         messageSigner.signUsingField(messageWrapper)
+        return messageWrapper
+    }
+
+    private fun messageSignedWithPreviousKey(): FlexibleSignableMessageWrapper<MessageWithSignature> {
+        val messageWrapper = messageWrapper()
+        messageSigner.signUsingField(messageWrapper, previousPrivateKey)
         return messageWrapper
     }
 
