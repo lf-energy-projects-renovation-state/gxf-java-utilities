@@ -43,7 +43,6 @@ class MessageSigner(properties: MessageSigningProperties) {
 
     private var signingKey: PrivateKey? = readPrivateKey(properties.privateKeyFile)
     private var verificationKey: PublicKey? = readPublicKey(keyAlgorithm, properties.publicKeyFile)
-    private var previousSigningKey: PrivateKey? = readPrivateKey(properties.previousPrivateKeyFile)
     private var previousVerificationKey: PublicKey? = readPublicKey(keyAlgorithm, properties.previousPublicKeyFile)
 
     init {
@@ -83,13 +82,6 @@ class MessageSigner(properties: MessageSigningProperties) {
     }
 
     /**
-     * Signs the provided `message` using the previous signing key, overwriting an existing signature field inside the
-     * message object.
-     */
-    fun <T> signUsingFieldWithPreviousKey(message: FlexibleSignableMessageWrapper<T>): T =
-        signUsingField(message, previousSigningKey)
-
-    /**
      * Signs the provided `producerRecord` in the header, overwriting an existing signature, if a non-null value is
      * already set.
      *
@@ -114,14 +106,6 @@ class MessageSigner(properties: MessageSigningProperties) {
     }
 
     /**
-     * Signs the provided `producerRecord` in the header, using the previous signing key, overwriting an existing
-     * signature, if a non-null value is already set.
-     */
-    fun <ValueType : SpecificRecordBase> signUsingHeaderWithPreviousKey(
-        producerRecord: ProducerRecord<String, ValueType>
-    ): ProducerRecord<String, ValueType> = signUsingHeader(producerRecord, previousSigningKey)
-
-    /**
      * Signs the provided `producerRecord` in the header, overwriting an existing signature, if a non-null value is
      * already set.
      *
@@ -144,14 +128,6 @@ class MessageSigner(properties: MessageSigningProperties) {
         }
         return producerRecord
     }
-
-    /**
-     * Signs the provided `producerRecord` in the header, using the previous signing key, overwriting an existing
-     * signature, if a non-null value is already set.
-     */
-    fun signByteArrayRecordUsingHeaderWithPreviousKey(
-        producerRecord: ProducerRecord<String, ByteArray>
-    ): ProducerRecord<String, ByteArray> = signByteArrayRecordUsingHeader(producerRecord, previousSigningKey)
 
     /**
      * Determines the signature for the given `message`.
