@@ -5,9 +5,6 @@ package com.gxf.utilities.kafka.message
 
 import com.gxf.utilities.kafka.avro.AvroDeserializer
 import com.gxf.utilities.kafka.avro.AvroSerializer
-import com.gxf.utilities.kafka.message.signing.MessageSigner
-import com.gxf.utilities.kafka.message.signing.interceptors.MessageSigningAvroProducerInterceptor
-import com.gxf.utilities.kafka.message.signing.interceptors.MessageSigningByteArrayProducerInterceptor
 import java.util.UUID
 import org.apache.avro.Schema
 import org.apache.avro.specific.SpecificRecordBase
@@ -41,25 +38,12 @@ object IntegrationTestHelper {
 
     fun createByteArrayKafkaProducer(
         embeddedKafkaBroker: EmbeddedKafkaBroker,
-        messageSigner: MessageSigner,
+        messageSigningProducerProperties: Map<String, Any>,
     ): Producer<String, ByteArray> {
         val producerProps: Map<String, Any> =
-            HashMap(byteArrayProducerProps(embeddedKafkaBroker.brokersAsString, messageSigner))
+            producerProps(embeddedKafkaBroker.brokersAsString) + messageSigningProducerProperties
         val producerFactory = DefaultKafkaProducerFactory(producerProps, StringSerializer(), ByteArraySerializer())
         return producerFactory.createProducer()
-    }
-
-    private fun byteArrayProducerProps(brokers: String, messageSigner: MessageSigner): Map<String, Any> {
-        return mapOf(
-            ProducerConfig.BOOTSTRAP_SERVERS_CONFIG to brokers,
-            ProducerConfig.BATCH_SIZE_CONFIG to "16384",
-            ProducerConfig.LINGER_MS_CONFIG to 1,
-            ProducerConfig.BUFFER_MEMORY_CONFIG to "33554432",
-            ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG to StringSerializer::class.java,
-            ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG to ByteArraySerializer::class.java,
-            ProducerConfig.INTERCEPTOR_CLASSES_CONFIG to MessageSigningByteArrayProducerInterceptor::class.java.name,
-            "message.signer" to messageSigner,
-        )
     }
 
     fun createAvroKafkaConsumer(
@@ -79,15 +63,15 @@ object IntegrationTestHelper {
 
     fun createAvroKafkaProducer(
         embeddedKafkaBroker: EmbeddedKafkaBroker,
-        messageSigner: MessageSigner,
+        messageSigningProducerProperties: Map<String, Any>,
     ): Producer<String, SpecificRecordBase> {
         val producerProps: Map<String, Any> =
-            HashMap(avroProducerProps(embeddedKafkaBroker.brokersAsString, messageSigner))
+            producerProps(embeddedKafkaBroker.brokersAsString) + messageSigningProducerProperties
         val producerFactory = DefaultKafkaProducerFactory(producerProps, StringSerializer(), AvroSerializer())
         return producerFactory.createProducer()
     }
 
-    private fun avroProducerProps(brokers: String, messageSigner: MessageSigner): Map<String, Any> {
+    private fun producerProps(brokers: String): Map<String, Any> {
         return mapOf(
             ProducerConfig.BOOTSTRAP_SERVERS_CONFIG to brokers,
             ProducerConfig.BATCH_SIZE_CONFIG to "16384",
@@ -95,8 +79,6 @@ object IntegrationTestHelper {
             ProducerConfig.BUFFER_MEMORY_CONFIG to "33554432",
             ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG to StringSerializer::class.java,
             ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG to AvroSerializer::class.java,
-            ProducerConfig.INTERCEPTOR_CLASSES_CONFIG to MessageSigningAvroProducerInterceptor::class.java.name,
-            "message.signer" to messageSigner,
         )
     }
 }

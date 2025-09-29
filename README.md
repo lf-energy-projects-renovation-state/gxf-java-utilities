@@ -33,15 +33,18 @@ new DefaultKafkaConsumerFactory(
 
 Library for signing Kafka messages and for verification of signed Kafka messages.
 
-Two variations are supported:
+Two variations of signing messages are supported:
 
-- The signature is set on a field of the message, via `FlexibleSignableMessageWrapper`;
 - The signature is set as a `signature` header on the Kafka `ProducerRecord`.
+- The signature is set on a field of the message, via `FlexibleSignableMessageWrapper`;
+
+Also, you can choose to use the `MessageSigner` class directly or use one of the message signing Kafka `ProducerInterceptor`s that sign messages automatically when sent.
+For verification, you always need to use the `MessageSigner` class directly.
 
 ### Wrapping messages
 Wrapping messages is required when using the 'sign using _field_' method.
 
-Here's how to wrap your message in FlexibleSignableMessageWrapper:
+Here's how to wrap your message in `FlexibleSignableMessageWrapper`:
 
 ```kotlin
 class MyMessage(val body: String, var sig: ByteBuffer? = null)
@@ -59,7 +62,25 @@ val wrapped : FlexibleSignableMessageWrapper<MyMessage> = FlexibleSignableMessag
 ### Signing and Verifying Messages
 The `MessageSigner` class is used for both signing and verifying a signature.
 
-To sign a message, use one of `MessageSigner`'s sign methods: 
+#### Using a message signing Kafka `ProducerInterceptor`
+To sign messages automatically when producing messages to Kafka, you can use one of these beans for producer properties in the Kafka configuration (use `@Qualifier` to select the correct one):
+- `producerPropertiesForByteArrayRecords`
+- `producerPropertiesForAvroRecords`
+
+```kotlin
+    @Bean
+    fun producerFactory(
+        @Qualifier("producerPropertiesForByteArrayRecords") producerProperties: Map<String, Any>,
+    ): ProducerFactory<String, ByteArray> =
+        DefaultKafkaProducerFactory(
+            producerProperties,
+            StringSerializer(),
+            ByteArraySerializer(),
+        )
+```
+
+#### Using the `MessageSigner` class directly
+To sign a message using the `MessageSigner` class directly, use one of `MessageSigner`'s sign methods: 
 - `signUsingField(...)` using the `FlexibleSignableMessageWrapper` to wrap your Avro object;
 - `signUsingHeader(...)` to add the signature to the Avro object's header.
 
