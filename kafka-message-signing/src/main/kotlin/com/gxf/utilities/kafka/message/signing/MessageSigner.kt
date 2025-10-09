@@ -6,6 +6,7 @@ package com.gxf.utilities.kafka.message.signing
 import com.gxf.utilities.kafka.avro.AvroEncoder
 import com.gxf.utilities.kafka.message.wrapper.FlexibleSignableMessageWrapper
 import com.gxf.utilities.kafka.message.wrapper.SignableMessageWrapper
+import io.github.oshai.kotlinlogging.KotlinLogging
 import java.io.IOException
 import java.io.UncheckedIOException
 import java.nio.ByteBuffer
@@ -23,8 +24,6 @@ import java.util.regex.Pattern
 import org.apache.avro.specific.SpecificRecordBase
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.apache.kafka.clients.producer.ProducerRecord
-import org.slf4j.Logger
-import org.slf4j.LoggerFactory
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.boot.ssl.pem.PemContent
 import org.springframework.core.io.Resource
@@ -398,14 +397,12 @@ class MessageSigner(properties: MessageSigningProperties) {
 
         private val PEM_REMOVAL_PATTERN: Pattern = Pattern.compile("-----(?:BEGIN|END) .*?-----|\\r|\\n")
 
-        const val KEY_NOT_FOR_SIGNING =
-            "This MessageSigner is not configured for signing, it can only be used for verification"
-        const val KEY_NOT_FOR_VERIFICATION =
-            "This MessageSigner is not configured for verification, it can only be used for signing"
+        const val KEY_NOT_FOR_SIGNING = "This MessageSigner is not configured for signing"
+        const val KEY_NOT_FOR_VERIFICATION = "This MessageSigner is not configured for verification"
         const val UNABLE_TO_SIGN_MESSAGE = "Unable to sign message"
         const val UNABLE_TO_VERIFY_SIGNATURE = "Unable to verify message signature"
 
-        val logger: Logger = LoggerFactory.getLogger(this::class.java)
+        val logger = KotlinLogging.logger {}
 
         @JvmStatic
         private fun signatureInstance(
@@ -451,27 +448,31 @@ class MessageSigner(properties: MessageSigningProperties) {
 
         fun readPrivateKey(privateKeyFile: Resource?): PrivateKey? {
             if (privateKeyFile == null) {
+                logger.debug { "No private key file provided" }
                 return null
             }
             try {
                 val content = privateKeyFile.getContentAsString(StandardCharsets.ISO_8859_1)
                 return PemContent.of(content).privateKey
             } catch (e: IOException) {
-                throw UncheckedIOException("Unable to read ${privateKeyFile.filename} as ISO-LATIN-1 PEM text", e)
+                logger.error(e) { "Unable to read ${privateKeyFile.filename} as ISO-LATIN-1 PEM text" }
+                throw UncheckedIOException(e)
             }
         }
 
         private fun readPublicKey(keyAlgorithm: String, publicKeyFile: Resource?): PublicKey? {
             if (publicKeyFile == null) {
+                logger.debug { "No public key file provided" }
                 return null
             }
             val content = publicKeyFile.getContentAsString(StandardCharsets.ISO_8859_1)
             val base64 = PEM_REMOVAL_PATTERN.matcher(content).replaceAll("")
             val bytes = Base64.getDecoder().decode(base64)
             val keySpec = X509EncodedKeySpec(bytes)
-            return try {
-                KeyFactory.getInstance(keyAlgorithm).generatePublic(keySpec)
+            try {
+                return KeyFactory.getInstance(keyAlgorithm).generatePublic(keySpec)
             } catch (e: GeneralSecurityException) {
+                logger.error(e) { "Unable to read ${publicKeyFile.filename} as ISO-LATIN-1 PEM text" }
                 throw UncheckedSecurityException(cause = e)
             }
         }
