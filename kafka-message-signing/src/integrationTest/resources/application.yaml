@@ -3,3 +3,4 @@ message-signing:
   strip-avro-header: true
   private-key-file: classpath:rsa-private.pem
   public-key-file: classpath:rsa-public.pem
+  use-interceptor: true
