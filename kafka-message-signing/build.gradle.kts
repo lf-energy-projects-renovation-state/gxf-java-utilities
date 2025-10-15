@@ -6,6 +6,7 @@ dependencies {
     implementation(libs.springContext)
     implementation(libs.springKafka)
     implementation(libs.springBootAutoconfigure)
+    implementation(libs.kotlinLoggingJvm)
 
     implementation(project(":kafka-avro"))
 
