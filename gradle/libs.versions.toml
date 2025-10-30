@@ -6,13 +6,13 @@
 avro = "1.12.1"
 avroPlugin = "1.9.1"
 dependencyManagement = "1.1.7"
-kotlin = "2.2.20"
+kotlin = "2.2.21"
 mockk = "1.14.6"
 msal4j = "1.23.1"
-sonarqube = "7.0.0.6105"
+sonarqube = "7.0.1.6134"
 spotless = "8.0.0"
 gradleWrapperUpgrade = "0.12"
-springBoot = "3.5.6"
+springBoot = "3.5.7"
 kotlinLogging = "7.0.13"
 
 [libraries]
