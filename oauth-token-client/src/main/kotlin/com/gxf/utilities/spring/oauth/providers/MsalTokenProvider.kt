@@ -9,9 +9,9 @@ import com.microsoft.aad.msal4j.ConfidentialClientApplication
 import com.microsoft.aad.msal4j.IAuthenticationResult
 import java.util.Optional
 import org.springframework.context.annotation.Conditional
-import org.springframework.stereotype.Service
+import org.springframework.stereotype.Component
 
-@Service
+@Component
 @Conditional(OAuthMsalEnabledCondition::class)
 internal class MsalTokenProvider(
     private val confidentialClientApplication: ConfidentialClientApplication,

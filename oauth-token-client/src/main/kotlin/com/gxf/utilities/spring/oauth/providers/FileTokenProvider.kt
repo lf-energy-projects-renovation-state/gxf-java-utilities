@@ -9,10 +9,12 @@ import com.gxf.utilities.spring.oauth.exceptions.OAuthTokenException
 import java.nio.charset.Charset
 import java.util.Optional
 import org.springframework.context.annotation.Conditional
+import org.springframework.context.annotation.Primary
 import org.springframework.core.io.Resource
-import org.springframework.stereotype.Service
+import org.springframework.stereotype.Component
 
-@Service
+@Component
+@Primary
 @Conditional(OAuthTokenResourceEnabledCondition::class)
 internal final class FileTokenProvider(clientProperties: OAuthClientProperties) : TokenProvider {
 

@@ -45,7 +45,7 @@ class MsalTokenProviderTest {
     @Autowired lateinit var tokenProvider: TokenProvider
 
     @Test
-    fun test() {
+    fun `should retrieve token from msal library`() {
         val testToken = "test-token-value"
         `when`(confidentialClientApplication.acquireToken(any<ClientCredentialParameters>()))
             .thenReturn(CompletableFuture.supplyAsync { TestAuthenticationResult(testToken) })

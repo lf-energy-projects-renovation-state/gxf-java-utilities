@@ -11,13 +11,13 @@ import org.springframework.test.context.TestPropertySource
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig
 
 @SpringJUnitConfig(OAuthTokenClientContext::class)
-@TestPropertySource("classpath:oauth-disabled.properties")
-class NoTokenProviderTest {
+@TestPropertySource("classpath:oauth-file-msal.properties")
+class FileAndMsalTokenProviderTest {
 
     @Autowired lateinit var tokenProvider: TokenProvider
 
     @Test
-    fun `should return empty`() {
-        assertThat(tokenProvider.getAccessToken()).isNotPresent()
+    fun `should return token from file even if msal config is present`() {
+        assertThat(tokenProvider.getAccessToken()).hasValue("test-token-from-file")
     }
 }

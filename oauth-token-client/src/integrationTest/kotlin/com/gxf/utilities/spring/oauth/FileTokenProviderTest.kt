@@ -17,7 +17,7 @@ class FileTokenProviderTest {
     @Autowired lateinit var tokenProvider: TokenProvider
 
     @Test
-    fun test() {
+    fun `should return token from file`() {
         assertThat(tokenProvider.getAccessToken()).hasValue("test-token-from-file")
     }
 }
