@@ -3,8 +3,8 @@
 // SPDX-License-Identifier: Apache-2.0
 package com.gxf.utilities.spring.oauth
 
-import com.gxf.utilities.spring.oauth.providers.NoTokenProvider
 import com.gxf.utilities.spring.oauth.providers.TokenProvider
+import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.test.context.TestPropertySource
@@ -18,6 +18,6 @@ class NoTokenProviderTest {
 
     @Test
     fun test() {
-        assert(tokenProvider is NoTokenProvider)
+        assertThat(tokenProvider.getAccessToken()).isNotPresent()
     }
 }

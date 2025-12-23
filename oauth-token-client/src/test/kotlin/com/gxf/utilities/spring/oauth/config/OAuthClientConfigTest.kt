@@ -14,21 +14,21 @@ internal class OAuthClientConfigTest {
 
     @Test
     fun `should read private key`() {
-        val client = OAuthClientConfig()
+        val client = MsalClientConfig()
         val privateKey = client.getPrivateKey(ClassPathResource("keys/private-key.key"))
         assertThat(privateKey).isNotNull()
     }
 
     @Test
     fun `should read private key with whitespace`() {
-        val client = OAuthClientConfig()
+        val client = MsalClientConfig()
         val privateKey = client.getPrivateKey(ClassPathResource("keys/private-key-whitespace.key"))
         assertThat(privateKey).isNotNull()
     }
 
     @Test
     fun `should read base 64 private key`() {
-        val client = OAuthClientConfig()
+        val client = MsalClientConfig()
         val privateKey =
             client.getPrivateKey(
                 ByteArrayResource(ClassPathResource("keys/private-key.key").inputStream.readAllBytes())
@@ -38,7 +38,7 @@ internal class OAuthClientConfigTest {
 
     @Test
     fun `should throw exception for non existent private key`() {
-        val client = OAuthClientConfig()
+        val client = MsalClientConfig()
         assertThatThrownBy { client.getPrivateKey(ClassPathResource("keys/does-not-exist.key")) }
             .isInstanceOf(OAuthTokenException::class.java)
             .hasMessage("Error getting private key")
@@ -46,21 +46,21 @@ internal class OAuthClientConfigTest {
 
     @Test
     fun `should read certificate`() {
-        val client = OAuthClientConfig()
+        val client = MsalClientConfig()
         val certificate = client.getCertificate(ClassPathResource("keys/certificate.crt"))
         assertThat(certificate).isNotNull()
     }
 
     @Test
     fun `should read certificate with whitespace`() {
-        val client = OAuthClientConfig()
+        val client = MsalClientConfig()
         val certificate = client.getCertificate(ClassPathResource("keys/certificate-whitespace.crt"))
         assertThat(certificate).isNotNull()
     }
 
     @Test
     fun `should read base 64 resource`() {
-        val client = OAuthClientConfig()
+        val client = MsalClientConfig()
         val certificate =
             client.getCertificate(
                 ByteArrayResource(ClassPathResource("keys/certificate.crt").inputStream.readAllBytes())
@@ -70,7 +70,7 @@ internal class OAuthClientConfigTest {
 
     @Test
     fun `should throw exception for non existent certificate`() {
-        val client = OAuthClientConfig()
+        val client = MsalClientConfig()
 
         assertThatThrownBy { client.getCertificate(ClassPathResource("keys/does-not-exist.key")) }
             .isInstanceOf(OAuthTokenException::class.java)

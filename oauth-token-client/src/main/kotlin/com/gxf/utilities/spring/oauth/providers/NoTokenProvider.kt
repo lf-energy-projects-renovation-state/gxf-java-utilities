@@ -10,7 +10,7 @@ import org.springframework.stereotype.Service
 
 @Service
 @Conditional(OAuthDisabledCondition::class)
-class NoTokenProvider : TokenProvider {
+internal class NoTokenProvider : TokenProvider {
     /** Returns an empty optional indicating that no oauth provider is configured. */
     override fun getAccessToken(): Optional<String> = Optional.empty<String>()
 }

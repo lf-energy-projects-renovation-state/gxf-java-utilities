@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: Apache-2.0
 package com.gxf.utilities.spring.oauth.config
 
-import com.gxf.utilities.spring.oauth.config.condition.OAuthEnabledCondition
+import com.gxf.utilities.spring.oauth.config.condition.OAuthMsalEnabledCondition
 import com.gxf.utilities.spring.oauth.exceptions.OAuthTokenException
 import com.microsoft.aad.msal4j.ClientCredentialFactory
 import com.microsoft.aad.msal4j.ClientCredentialParameters
@@ -14,37 +14,53 @@ import java.security.PrivateKey
 import java.security.cert.CertificateFactory
 import java.security.cert.X509Certificate
 import java.security.spec.PKCS8EncodedKeySpec
-import java.util.*
+import java.util.Base64
 import org.slf4j.LoggerFactory
+import org.springframework.beans.BeanInstantiationException
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Conditional
 import org.springframework.context.annotation.Configuration
 import org.springframework.core.io.Resource
 
 @Configuration
-@Conditional(OAuthEnabledCondition::class)
-class OAuthClientConfig {
+@Conditional(OAuthMsalEnabledCondition::class)
+class MsalClientConfig(val properties: OAuthClientProperties) {
 
     companion object {
-        private val LOGGER = LoggerFactory.getLogger(OAuthClientConfig::class.java)
+        private val LOGGER = LoggerFactory.getLogger(MsalClientConfig::class.java)
         private val PEM_REMOVAL_PATTERN = Regex("-----[A-Z ]*-----")
     }
 
-    @Bean
-    fun clientCredentialParameters(clientData: OAuthClientProperties): ClientCredentialParameters {
-        return ClientCredentialParameters.builder(setOf(clientData.scope)).build()
+    init {
+        if (properties.certificate?.isReadable == false) {
+            throw BeanInstantiationException(
+                MsalClientConfig::class.java,
+                "Certificate '${properties.certificate?.description}' must be readable",
+            )
+        }
+        if (properties.privateKey?.isReadable == false) {
+            throw BeanInstantiationException(
+                MsalClientConfig::class.java,
+                "Private key '${properties.privateKey?.description}' must be readable",
+            )
+        }
     }
 
     @Bean
-    fun confidentialClientApplication(clientData: OAuthClientProperties): ConfidentialClientApplication {
+    fun clientCredentialParameters(): ClientCredentialParameters {
+        return ClientCredentialParameters.builder(setOf(properties.scope)).build()
+    }
+
+    @Bean
+    fun confidentialClientApplication(): ConfidentialClientApplication {
         val credential: IClientCredential =
             ClientCredentialFactory.createFromCertificate(
-                getPrivateKey(Objects.requireNonNull(clientData.privateKey)),
-                getCertificate(Objects.requireNonNull(clientData.certificate)),
+                getPrivateKey(properties.privateKey),
+                getCertificate(properties.certificate),
             )
         return try {
-            ConfidentialClientApplication.builder(clientData.clientId, credential)
-                .authority(clientData.tokenEndpoint)
+            ConfidentialClientApplication.builder(properties.clientId, credential)
+                .authority(properties.tokenEndpoint)
                 .build()
         } catch (e: Exception) {
             throw OAuthTokenException("Error creating client credentials", e)
@@ -52,7 +68,13 @@ class OAuthClientConfig {
     }
 
     /** Reads a private key file and puts */
-    fun getPrivateKey(resource: Resource): PrivateKey {
+    fun getPrivateKey(resource: Resource?): PrivateKey {
+        if (resource == null) {
+            throw OAuthTokenException("No private key provided")
+        } else if (!resource.isReadable) {
+            throw OAuthTokenException("Private key ${resource.description} is not readable")
+        }
+
         try {
             LOGGER.info("Reading private key: ${resource.description}")
             val privateKeyContent = readPEMFile(resource)
@@ -63,7 +85,13 @@ class OAuthClientConfig {
         }
     }
 
-    fun getCertificate(resource: Resource): X509Certificate {
+    fun getCertificate(resource: Resource?): X509Certificate {
+        if (resource == null) {
+            throw OAuthTokenException("No certificate provided")
+        } else if (!resource.isReadable) {
+            throw OAuthTokenException("Certificate ${resource.description} is not readable")
+        }
+
         try {
             LOGGER.info("Reading certificate: ${resource.description}")
             val certificateContent = readPEMFile(resource)

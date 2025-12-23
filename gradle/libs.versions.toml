@@ -25,6 +25,7 @@ kafkaClients = { group = "org.apache.kafka", name = "kafka-clients" }
 mockk = { group = "io.mockk", name = "mockk", version.ref = "mockk" }
 msal = { group = "com.microsoft.azure", name = "msal4j", version.ref = "msal4j" }
 slf4jApi = { group = "org.slf4j", name = "slf4j-api" }
+kotlinReflect = { group = "org.jetbrains.kotlin", name = "kotlin-reflect", version.ref = "kotlin" }
 kotlinLoggingJvm = { group = "io.github.oshai", name = "kotlin-logging-jvm", version.ref = "kotlinLogging" }
 springBootAutoconfigure = { group = "org.springframework.boot", name = "spring-boot-autoconfigure" }
 springBootDependencies = { group = "org.springframework.boot", name = "spring-boot-dependencies", version.ref = "springBoot" }
