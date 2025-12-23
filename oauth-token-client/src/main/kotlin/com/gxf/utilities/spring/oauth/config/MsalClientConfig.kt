@@ -16,7 +16,6 @@ import java.security.cert.X509Certificate
 import java.security.spec.PKCS8EncodedKeySpec
 import java.util.Base64
 import org.slf4j.LoggerFactory
-import org.springframework.beans.BeanInstantiationException
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Conditional
 import org.springframework.context.annotation.Configuration
@@ -24,35 +23,20 @@ import org.springframework.core.io.Resource
 
 @Configuration
 @Conditional(OAuthMsalEnabledCondition::class)
-class MsalClientConfig(val properties: OAuthClientProperties) {
+class MsalClientConfig {
 
     companion object {
         private val LOGGER = LoggerFactory.getLogger(MsalClientConfig::class.java)
         private val PEM_REMOVAL_PATTERN = Regex("-----[A-Z ]*-----")
     }
 
-    init {
-        if (properties.certificate?.isReadable == false) {
-            throw BeanInstantiationException(
-                MsalClientConfig::class.java,
-                "Certificate '${properties.certificate?.description}' must be readable",
-            )
-        }
-        if (properties.privateKey?.isReadable == false) {
-            throw BeanInstantiationException(
-                MsalClientConfig::class.java,
-                "Private key '${properties.privateKey?.description}' must be readable",
-            )
-        }
-    }
-
     @Bean
-    fun clientCredentialParameters(): ClientCredentialParameters {
+    fun clientCredentialParameters(properties: OAuthClientProperties): ClientCredentialParameters {
         return ClientCredentialParameters.builder(setOf(properties.scope)).build()
     }
 
     @Bean
-    fun confidentialClientApplication(): ConfidentialClientApplication {
+    fun confidentialClientApplication(properties: OAuthClientProperties): ConfidentialClientApplication {
         val credential: IClientCredential =
             ClientCredentialFactory.createFromCertificate(
                 getPrivateKey(properties.privateKey),
