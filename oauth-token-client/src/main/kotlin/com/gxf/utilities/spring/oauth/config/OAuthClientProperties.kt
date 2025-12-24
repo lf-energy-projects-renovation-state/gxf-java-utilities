@@ -7,7 +7,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties
 import org.springframework.core.io.Resource
 
 @ConfigurationProperties(prefix = "oauth.client")
-class OAuthClientProperties(
+data class OAuthClientProperties(
     val tokenLocation: Resource?,
     val clientId: String?,
     val scope: String?,

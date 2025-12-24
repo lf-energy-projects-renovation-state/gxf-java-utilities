@@ -10,9 +10,34 @@ import org.junit.jupiter.api.Test
 import org.springframework.core.io.ByteArrayResource
 import org.springframework.core.io.ClassPathResource
 
-internal class OAuthClientConfigTest {
+internal class MsalClientConfigTest {
 
     private val client = MsalClientConfig()
+
+    private val msalProperties =
+        OAuthClientProperties(
+            tokenLocation = null,
+            clientId = "some-test-client-id",
+            scope = "some-test-scope",
+            tokenEndpoint = "https://localhost:56788/token",
+            certificate = ClassPathResource("keys/certificate.crt"),
+            privateKey = ClassPathResource("keys/private-key.key"),
+        )
+
+    @Test
+    fun `should create confidential client application`() {
+        val confidentialClientApplication = client.confidentialClientApplication(msalProperties)
+        assertThat(confidentialClientApplication).isNotNull()
+        assertThat(confidentialClientApplication.accounts)
+    }
+
+    @Test
+    fun `should throw exception for invalid authority`() {
+        val invalidTokenEndpointProperties = msalProperties.copy(tokenEndpoint = "ht://localhost:56788")
+        assertThatThrownBy { client.confidentialClientApplication(invalidTokenEndpointProperties) }
+            .isInstanceOf(OAuthTokenException::class.java)
+            .hasMessage("Error creating client credentials")
+    }
 
     @Test
     fun `should read private key`() {
@@ -33,6 +58,13 @@ internal class OAuthClientConfigTest {
                 ByteArrayResource(ClassPathResource("keys/private-key.key").inputStream.readAllBytes())
             )
         assertThat(privateKey).isNotNull()
+    }
+
+    @Test
+    fun `should throw exception for null private key`() {
+        assertThatThrownBy { client.getPrivateKey(null) }
+            .isInstanceOf(OAuthTokenException::class.java)
+            .hasMessage("No private key provided")
     }
 
     @Test
@@ -61,6 +93,13 @@ internal class OAuthClientConfigTest {
                 ByteArrayResource(ClassPathResource("keys/certificate.crt").inputStream.readAllBytes())
             )
         assertThat(certificate).isNotNull()
+    }
+
+    @Test
+    fun `should throw exception for null certificate`() {
+        assertThatThrownBy { client.getCertificate(null) }
+            .isInstanceOf(OAuthTokenException::class.java)
+            .hasMessage("No certificate provided")
     }
 
     @Test

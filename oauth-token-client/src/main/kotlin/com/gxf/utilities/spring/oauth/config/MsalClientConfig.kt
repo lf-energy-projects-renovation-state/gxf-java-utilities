@@ -31,9 +31,8 @@ class MsalClientConfig {
     }
 
     @Bean
-    fun clientCredentialParameters(properties: OAuthClientProperties): ClientCredentialParameters {
-        return ClientCredentialParameters.builder(setOf(properties.scope)).build()
-    }
+    fun clientCredentialParameters(properties: OAuthClientProperties): ClientCredentialParameters =
+        ClientCredentialParameters.builder(setOf(properties.scope)).build()
 
     @Bean
     fun confidentialClientApplication(properties: OAuthClientProperties): ConfidentialClientApplication {

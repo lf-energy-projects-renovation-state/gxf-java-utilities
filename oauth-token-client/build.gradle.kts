@@ -5,9 +5,7 @@ dependencies{
 
     testImplementation(libs.junitJupiterApi)
     testImplementation(libs.junitJupiterEngine)
-
     testImplementation(libs.springBootTest)
-
     testImplementation(libs.assertJ)
 
     testRuntimeOnly(libs.junitPlatformLauncher)
