@@ -12,6 +12,7 @@ import com.microsoft.aad.msal4j.ITenantProfile
 import java.util.Date
 import java.util.concurrent.CompletableFuture
 import org.assertj.core.api.Assertions.assertThat
+import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.`when`
@@ -24,32 +25,47 @@ import org.springframework.test.context.junit.jupiter.SpringJUnitConfig
 @TestPropertySource("classpath:oauth-msal.properties")
 class MsalTokenProviderTest {
 
-    class TestAuthenticationResult(val accessToken: String) : IAuthenticationResult {
-        override fun accessToken(): String = accessToken
+    @Nested
+    inner class TestMsalConfiguration {
+        inner class TestAuthenticationResult(val accessToken: String) : IAuthenticationResult {
+            override fun accessToken(): String = accessToken
 
-        override fun idToken(): String? = null
+            override fun idToken(): String? = null
 
-        override fun account(): IAccount? = null
+            override fun account(): IAccount? = null
 
-        override fun tenantProfile(): ITenantProfile? = null
+            override fun tenantProfile(): ITenantProfile? = null
 
-        override fun environment(): String? = null
+            override fun environment(): String? = null
 
-        override fun scopes(): String? = null
+            override fun scopes(): String? = null
 
-        override fun expiresOnDate(): Date? = null
+            override fun expiresOnDate(): Date? = null
+        }
+
+        @MockitoBean lateinit var confidentialClientApplication: ConfidentialClientApplication
+
+        @Autowired lateinit var tokenProvider: TokenProvider
+
+        @Test
+        fun `should retrieve token from msal library`() {
+            val testToken = "test-token-value"
+            `when`(confidentialClientApplication.acquireToken(any<ClientCredentialParameters>()))
+                .thenReturn(CompletableFuture.supplyAsync { TestAuthenticationResult(testToken) })
+
+            assertThat(tokenProvider.getAccessToken()).contains(testToken)
+        }
     }
 
-    @MockitoBean lateinit var confidentialClientApplication: ConfidentialClientApplication
+    @Nested
+    inner class TestMsalTokenProvider {
 
-    @Autowired lateinit var tokenProvider: TokenProvider
+        @Autowired lateinit var tokenProvider: TokenProvider
 
-    @Test
-    fun `should retrieve token from msal library`() {
-        val testToken = "test-token-value"
-        `when`(confidentialClientApplication.acquireToken(any<ClientCredentialParameters>()))
-            .thenReturn(CompletableFuture.supplyAsync { TestAuthenticationResult(testToken) })
-
-        assertThat(tokenProvider.getAccessToken()).contains(testToken)
+        @Test
+        fun `msal token provider should bootstrap if confidential client application is not mocked`() {
+            // The msal4j library is very hard to mock properly
+            assertThat(tokenProvider).isNotNull()
+        }
     }
 }
