@@ -4,7 +4,7 @@
 package com.gxf.utilities.spring.oauth.providers
 
 import com.gxf.utilities.spring.oauth.config.OAuthClientProperties
-import com.gxf.utilities.spring.oauth.config.condition.OAuthTokenResourceEnabledCondition
+import com.gxf.utilities.spring.oauth.config.condition.OAuthTokenFileEnabledCondition
 import com.gxf.utilities.spring.oauth.exceptions.OAuthTokenException
 import java.nio.charset.Charset
 import java.util.Optional
@@ -15,7 +15,7 @@ import org.springframework.stereotype.Component
 
 @Component
 @Primary
-@Conditional(OAuthTokenResourceEnabledCondition::class)
+@Conditional(OAuthTokenFileEnabledCondition::class)
 internal final class FileTokenProvider(clientProperties: OAuthClientProperties) : TokenProvider {
 
     private val tokenResource: Resource

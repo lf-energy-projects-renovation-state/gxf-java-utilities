@@ -7,7 +7,7 @@ import org.springframework.context.annotation.Condition
 import org.springframework.context.annotation.ConditionContext
 import org.springframework.core.type.AnnotatedTypeMetadata
 
-class OAuthTokenResourceEnabledCondition : Condition {
+class OAuthTokenFileEnabledCondition : Condition {
     override fun matches(context: ConditionContext, metadata: AnnotatedTypeMetadata): Boolean =
         oAuthEnabled(context) && tokenLocationPresent(context)
 }
