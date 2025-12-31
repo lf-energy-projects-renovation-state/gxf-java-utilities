@@ -29,6 +29,7 @@ slf4jApi = { group = "org.slf4j", name = "slf4j-api" }
 kotlinReflect = { group = "org.jetbrains.kotlin", name = "kotlin-reflect", version.ref = "kotlin" }
 kotlinLoggingJvm = { group = "io.github.oshai", name = "kotlin-logging-jvm", version.ref = "kotlinLogging" }
 springBootAutoconfigure = { group = "org.springframework.boot", name = "spring-boot-autoconfigure" }
+springBootConfigurationProcessor = { group = "org.springframework.boot", name = "spring-boot-configuration-processor" }
 springBootDependencies = { group = "org.springframework.boot", name = "spring-boot-dependencies", version.ref = "springBoot" }
 springBootStarter = { group = "org.springframework.boot", name = "spring-boot-starter" }
 springBootStarterTest = { group = "org.springframework.boot", name = "spring-boot-starter-test" }
@@ -45,6 +46,7 @@ dependencyManagement = { id = "io.spring.dependency-management", version.ref = "
 jacoco = { id = "jacoco" }
 jacocoReportAggregation = { id = "jacoco-report-aggregation" }
 kotlin = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
+kapt = { id = "org.jetbrains.kotlin.kapt", version.ref = "kotlin" }
 mavenPublish = { id = "org.gradle.maven-publish" }
 sonarqube = { id = "org.sonarqube", version.ref = "sonarqube" }
 spotless = { id = "com.diffplug.spotless", version.ref = "spotless" }

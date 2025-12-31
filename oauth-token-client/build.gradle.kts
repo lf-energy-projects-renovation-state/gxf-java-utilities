@@ -3,6 +3,9 @@ dependencies{
     implementation(libs.kotlinReflect)
     implementation(libs.msal)
 
+    // Used to generate properties metadata
+    kapt(libs.springBootConfigurationProcessor)
+
     testImplementation(libs.junitJupiterApi)
     testImplementation(libs.junitJupiterEngine)
     testImplementation(libs.springBootTest)
