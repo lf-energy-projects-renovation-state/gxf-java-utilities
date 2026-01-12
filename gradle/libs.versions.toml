@@ -9,11 +9,11 @@ dependencyManagement = "1.1.7"
 kotlin = "2.3.0"
 mockk = "1.14.7"
 msal4j = "1.23.1"
-sonarqube = "7.2.1.6560"
+sonarqube = "7.2.2.6593"
 spotless = "8.1.0"
 gradleWrapperUpgrade = "0.12"
 springBoot = "3.5.8"
-kotlinLogging = "7.0.13"
+kotlinLogging = "7.0.14"
 
 [libraries]
 assertJ = { group = "org.assertj", name = "assertj-core" }
