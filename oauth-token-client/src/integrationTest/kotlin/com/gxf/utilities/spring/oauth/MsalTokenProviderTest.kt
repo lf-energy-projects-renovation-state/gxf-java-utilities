@@ -9,16 +9,15 @@ import com.microsoft.aad.msal4j.ConfidentialClientApplication
 import com.microsoft.aad.msal4j.IAccount
 import com.microsoft.aad.msal4j.IAuthenticationResult
 import com.microsoft.aad.msal4j.ITenantProfile
+import com.ninjasquad.springmockk.MockkBean
+import io.mockk.every
 import java.util.Date
 import java.util.concurrent.CompletableFuture
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
-import org.mockito.ArgumentMatchers.any
-import org.mockito.Mockito.`when`
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.test.context.TestPropertySource
-import org.springframework.test.context.bean.override.mockito.MockitoBean
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig
 
 @SpringJUnitConfig(OAuthTokenClientContext::class)
@@ -43,15 +42,15 @@ class MsalTokenProviderTest {
             override fun expiresOnDate(): Date? = null
         }
 
-        @MockitoBean lateinit var confidentialClientApplication: ConfidentialClientApplication
+        @MockkBean lateinit var confidentialClientApplication: ConfidentialClientApplication
 
         @Autowired lateinit var tokenProvider: TokenProvider
 
         @Test
         fun `should retrieve token from msal library`() {
             val testToken = "test-token-value"
-            `when`(confidentialClientApplication.acquireToken(any<ClientCredentialParameters>()))
-                .thenReturn(CompletableFuture.supplyAsync { TestAuthenticationResult(testToken) })
+            every { confidentialClientApplication.acquireToken(any<ClientCredentialParameters>()) } returns
+                CompletableFuture.supplyAsync { TestAuthenticationResult(testToken) }
 
             assertThat(tokenProvider.getAccessToken()).contains(testToken)
         }

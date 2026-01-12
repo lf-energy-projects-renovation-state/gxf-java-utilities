@@ -7,6 +7,7 @@ dependencies{
     testImplementation(libs.junitJupiterEngine)
     testImplementation(libs.springBootTest)
     testImplementation(libs.assertJ)
+    testImplementation(libs.mockk)
 
     testRuntimeOnly(libs.junitPlatformLauncher)
 }
@@ -19,6 +20,8 @@ testing {
                 implementation(project())
                 implementation(libs.springBootStarterTest)
                 implementation(libs.msal)
+                implementation(libs.mockk)
+                implementation(libs.springmockk)
             }
         }
     }
