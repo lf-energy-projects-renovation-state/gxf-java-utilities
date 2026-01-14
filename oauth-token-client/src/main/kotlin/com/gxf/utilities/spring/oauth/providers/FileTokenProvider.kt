@@ -19,9 +19,7 @@ internal final class FileTokenProvider(clientProperties: OAuthClientProperties) 
     private val tokenResource: Resource
 
     init {
-        if (clientProperties.tokenLocation == null) {
-            throw OAuthTokenException("The token location property is required")
-        } else if (!clientProperties.tokenLocation.isReadable) {
+        if (clientProperties.tokenLocation?.isReadable != true) {
             throw OAuthTokenException("The token location '${clientProperties.tokenLocation}` is not readable")
         }
         tokenResource = clientProperties.tokenLocation
