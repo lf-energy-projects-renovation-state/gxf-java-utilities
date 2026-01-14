@@ -39,6 +39,7 @@ wrapperUpgrade {
 
 subprojects {
     apply(plugin = rootProject.libs.plugins.kotlin.get().pluginId)
+    apply(plugin = rootProject.libs.plugins.kapt.get().pluginId)
     apply(plugin = rootProject.libs.plugins.spring.get().pluginId)
     apply(plugin = rootProject.libs.plugins.dependencyManagement.get().pluginId)
     apply(plugin = rootProject.libs.plugins.mavenPublish.get().pluginId)

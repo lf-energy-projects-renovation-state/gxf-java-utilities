@@ -3,13 +3,16 @@
 // SPDX-License-Identifier: Apache-2.0
 package com.gxf.utilities.spring.oauth
 
-import com.gxf.utilities.spring.oauth.config.OAuthClientConfig
+import com.gxf.utilities.spring.oauth.config.MsalClientConfig
 import com.gxf.utilities.spring.oauth.config.OAuthClientProperties
+import com.gxf.utilities.spring.oauth.providers.FileTokenProvider
+import com.gxf.utilities.spring.oauth.providers.MsalTokenProvider
 import com.gxf.utilities.spring.oauth.providers.NoTokenProvider
-import com.gxf.utilities.spring.oauth.providers.OAuthTokenProvider
-import org.springframework.context.annotation.Configuration
+import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Import
+import org.springframework.stereotype.Component
 
-@Configuration
-@Import(OAuthClientConfig::class, OAuthClientProperties::class, OAuthTokenProvider::class, NoTokenProvider::class)
+@Component
+@EnableConfigurationProperties(OAuthClientProperties::class)
+@Import(MsalClientConfig::class, MsalTokenProvider::class, FileTokenProvider::class, NoTokenProvider::class)
 class OAuthTokenClientContext

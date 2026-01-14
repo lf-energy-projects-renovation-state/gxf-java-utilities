@@ -6,14 +6,15 @@
 avro = "1.12.1"
 avroPlugin = "1.9.1"
 dependencyManagement = "1.1.7"
+gradleWrapperUpgrade = "0.12"
 kotlin = "2.3.0"
+kotlinLogging = "7.0.14"
 mockk = "1.14.7"
 msal4j = "1.23.1"
 sonarqube = "7.2.2.6593"
 spotless = "8.1.0"
-gradleWrapperUpgrade = "0.12"
-springBoot = "3.5.7"
-kotlinLogging = "7.0.14"
+springBoot = "3.5.8"
+springmockk = "4.0.2"
 
 [libraries]
 assertJ = { group = "org.assertj", name = "assertj-core" }
@@ -25,8 +26,10 @@ kafkaClients = { group = "org.apache.kafka", name = "kafka-clients" }
 mockk = { group = "io.mockk", name = "mockk", version.ref = "mockk" }
 msal = { group = "com.microsoft.azure", name = "msal4j", version.ref = "msal4j" }
 slf4jApi = { group = "org.slf4j", name = "slf4j-api" }
+kotlinReflect = { group = "org.jetbrains.kotlin", name = "kotlin-reflect", version.ref = "kotlin" }
 kotlinLoggingJvm = { group = "io.github.oshai", name = "kotlin-logging-jvm", version.ref = "kotlinLogging" }
 springBootAutoconfigure = { group = "org.springframework.boot", name = "spring-boot-autoconfigure" }
+springBootConfigurationProcessor = { group = "org.springframework.boot", name = "spring-boot-configuration-processor" }
 springBootDependencies = { group = "org.springframework.boot", name = "spring-boot-dependencies", version.ref = "springBoot" }
 springBootStarter = { group = "org.springframework.boot", name = "spring-boot-starter" }
 springBootStarterTest = { group = "org.springframework.boot", name = "spring-boot-starter-test" }
@@ -34,6 +37,7 @@ springBootTest = { group = "org.springframework.boot", name = "spring-boot-test"
 springContext = { group = "org.springframework", name = "spring-context" }
 springKafka = { group = "org.springframework.kafka", name = "spring-kafka" }
 springKafkaTest = { group = "org.springframework.kafka", name = "spring-kafka-test" }
+springmockk = { group = "com.ninja-squad", name = "springmockk", version.ref = "springmockk" }
 springTest = { group = "org.springframework", name = "spring-test" }
 
 [plugins]
@@ -42,6 +46,7 @@ dependencyManagement = { id = "io.spring.dependency-management", version.ref = "
 jacoco = { id = "jacoco" }
 jacocoReportAggregation = { id = "jacoco-report-aggregation" }
 kotlin = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
+kapt = { id = "org.jetbrains.kotlin.kapt", version.ref = "kotlin" }
 mavenPublish = { id = "org.gradle.maven-publish" }
 sonarqube = { id = "org.sonarqube", version.ref = "sonarqube" }
 spotless = { id = "com.diffplug.spotless", version.ref = "spotless" }

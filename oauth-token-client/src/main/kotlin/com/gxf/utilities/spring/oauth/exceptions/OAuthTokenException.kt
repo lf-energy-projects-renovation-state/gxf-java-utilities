@@ -3,4 +3,4 @@
 // SPDX-License-Identifier: Apache-2.0
 package com.gxf.utilities.spring.oauth.exceptions
 
-class OAuthTokenException(message: String?, cause: Throwable?) : RuntimeException(message, cause)
+class OAuthTokenException(message: String?, cause: Throwable? = null) : RuntimeException(message, cause)
