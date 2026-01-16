@@ -106,8 +106,8 @@ class DeprecatedMessageSignerTest {
             return signature
         }
 
-        override fun setSignature(newSignature: ByteBuffer?) {
-            signature = newSignature
+        override fun setSignature(signature: ByteBuffer?) {
+            this.signature = signature
         }
     }
 }
