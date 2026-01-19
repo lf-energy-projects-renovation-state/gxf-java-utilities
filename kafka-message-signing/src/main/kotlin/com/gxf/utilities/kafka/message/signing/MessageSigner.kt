@@ -226,14 +226,14 @@ class MessageSigner(properties: MessageSigningProperties) {
      */
     fun <T> verifyUsingField(message: FlexibleSignableMessageWrapper<T>, key: PublicKey? = verificationKey): Boolean {
         if (!canVerifyMessageSignatures(key)) {
-            logger.error(KEY_NOT_FOR_VERIFICATION)
+            logger.error { KEY_NOT_FOR_VERIFICATION }
             return false
         }
 
         val messageSignature = message.getSignature()
 
         if (messageSignature == null) {
-            logger.error("This message does not contain a signature")
+            logger.error { "This message does not contain a signature" }
             return false
         }
 
@@ -241,7 +241,7 @@ class MessageSigner(properties: MessageSigningProperties) {
             message.clearSignature()
             return verifySignatureBytes(messageSignature, toByteBuffer(message), key!!)
         } catch (e: Exception) {
-            logger.error(UNABLE_TO_VERIFY_SIGNATURE, e)
+            logger.error(e) { UNABLE_TO_VERIFY_SIGNATURE }
             return false
         } finally {
             message.setSignature(messageSignature)
@@ -267,7 +267,7 @@ class MessageSigner(properties: MessageSigningProperties) {
         key: PublicKey? = verificationKey,
     ): Boolean {
         if (!canVerifyMessageSignatures(key)) {
-            logger.error(KEY_NOT_FOR_VERIFICATION)
+            logger.error { KEY_NOT_FOR_VERIFICATION }
             return false
         }
         try {
@@ -275,7 +275,7 @@ class MessageSigner(properties: MessageSigningProperties) {
             val specificRecordBase: SpecificRecordBase = consumerRecord.value()
             return verifySignatureBytes(ByteBuffer.wrap(signatureBytes), toByteBuffer(specificRecordBase), key!!)
         } catch (e: Exception) {
-            logger.error(UNABLE_TO_VERIFY_SIGNATURE, e)
+            logger.error(e) { UNABLE_TO_VERIFY_SIGNATURE }
             return false
         }
     }
@@ -300,13 +300,13 @@ class MessageSigner(properties: MessageSigningProperties) {
     ): Boolean {
         try {
             if (!canVerifyMessageSignatures(key)) {
-                logger.error(KEY_NOT_FOR_VERIFICATION)
+                logger.error { KEY_NOT_FOR_VERIFICATION }
                 return false
             }
             val signatureBytes = getSignatureBytes(consumerRecord)
             return verifySignatureBytes(ByteBuffer.wrap(signatureBytes), ByteBuffer.wrap(consumerRecord.value()), key!!)
         } catch (e: Exception) {
-            logger.error(UNABLE_TO_VERIFY_SIGNATURE, e)
+            logger.error(e) { UNABLE_TO_VERIFY_SIGNATURE }
             return false
         }
     }
@@ -453,7 +453,7 @@ class MessageSigner(properties: MessageSigningProperties) {
             }
             try {
                 val content = privateKeyFile.getContentAsString(StandardCharsets.ISO_8859_1)
-                return PemContent.of(content).privateKey
+                return PemContent.of(content)?.privateKey
             } catch (e: IOException) {
                 logger.error(e) { "Unable to read ${privateKeyFile.filename} as ISO-LATIN-1 PEM text" }
                 throw UncheckedIOException(e)

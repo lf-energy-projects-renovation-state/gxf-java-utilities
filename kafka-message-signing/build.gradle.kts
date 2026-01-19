@@ -4,8 +4,7 @@
 
 dependencies {
     implementation(libs.springContext)
-    implementation(libs.springKafka)
-    implementation(libs.springBootAutoconfigure)
+    implementation(libs.springBootKafka)
     implementation(libs.kotlinLoggingJvm)
 
     implementation(project(":kafka-avro"))
@@ -37,8 +36,8 @@ testing {
             dependencies {
                 implementation(project())
                 implementation(libs.springBootStarterTest)
-                implementation(libs.springKafka)
-                implementation(libs.springKafkaTest)
+                implementation(libs.springBootKafka)
+                implementation(libs.springBootKafkaTest)
                 implementation(libs.kafkaClients)
                 implementation(libs.assertJ)
                 implementation(libs.avro)

@@ -1,5 +1,5 @@
 dependencies{
-    implementation(libs.springBootAutoconfigure)
+    implementation(libs.springBoot)
     implementation(libs.kotlinReflect)
     implementation(libs.msal)
 

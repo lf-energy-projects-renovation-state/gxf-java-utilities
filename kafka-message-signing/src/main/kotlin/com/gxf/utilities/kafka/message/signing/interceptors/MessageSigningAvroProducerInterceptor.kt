@@ -9,7 +9,7 @@ import org.apache.kafka.clients.producer.ProducerInterceptor
 import org.apache.kafka.clients.producer.ProducerRecord
 import org.apache.kafka.clients.producer.RecordMetadata
 
-class MessageSigningAvroProducerInterceptor() : ProducerInterceptor<String, SpecificRecordBase> {
+class MessageSigningAvroProducerInterceptor : ProducerInterceptor<String, SpecificRecordBase> {
     private lateinit var messageSigner: MessageSigner
 
     override fun onSend(

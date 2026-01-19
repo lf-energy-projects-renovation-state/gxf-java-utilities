@@ -27,7 +27,7 @@ object IntegrationTestHelper {
     ): Consumer<String, ByteArray> {
         val consumerFactory =
             DefaultKafkaConsumerFactory(
-                KafkaTestUtils.consumerProps(UUID.randomUUID().toString(), "true", embeddedKafkaBroker),
+                KafkaTestUtils.consumerProps(embeddedKafkaBroker, UUID.randomUUID().toString(), true),
                 StringDeserializer(),
                 ByteArrayDeserializer(),
             )
@@ -52,7 +52,7 @@ object IntegrationTestHelper {
     ): Consumer<String, SpecificRecordBase> {
         val consumerFactory =
             DefaultKafkaConsumerFactory(
-                KafkaTestUtils.consumerProps(UUID.randomUUID().toString(), "true", embeddedKafkaBroker),
+                KafkaTestUtils.consumerProps(embeddedKafkaBroker, UUID.randomUUID().toString(), true),
                 StringDeserializer(),
                 AvroDeserializer(listOf(Message.getClassSchema())),
             )
@@ -84,7 +84,8 @@ object IntegrationTestHelper {
 }
 
 class Message(private var message: String?) : SpecificRecordBase() {
-    constructor() : this(null) {}
+    @Suppress("unused") // Used reflectively by Spring Kafka
+    constructor() : this(null)
 
     companion object {
         fun getClassSchema(): Schema =
@@ -96,9 +97,7 @@ class Message(private var message: String?) : SpecificRecordBase() {
 
     override fun getSchema() = getClassSchema()
 
-    override fun get(field: Int): Any {
-        return message!!
-    }
+    override fun get(field: Int): Any = message!!
 
     override fun put(field: Int, value: Any) {
         message = value.toString()

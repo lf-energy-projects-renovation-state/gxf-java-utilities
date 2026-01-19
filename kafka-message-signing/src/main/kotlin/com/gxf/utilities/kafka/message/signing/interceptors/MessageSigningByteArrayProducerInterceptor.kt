@@ -8,7 +8,7 @@ import org.apache.kafka.clients.producer.ProducerInterceptor
 import org.apache.kafka.clients.producer.ProducerRecord
 import org.apache.kafka.clients.producer.RecordMetadata
 
-class MessageSigningByteArrayProducerInterceptor() : ProducerInterceptor<String, ByteArray> {
+class MessageSigningByteArrayProducerInterceptor : ProducerInterceptor<String, ByteArray> {
     private lateinit var messageSigner: MessageSigner
 
     override fun onSend(producerRecord: ProducerRecord<String, ByteArray>): ProducerRecord<String, ByteArray> =
