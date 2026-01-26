@@ -6,7 +6,6 @@
 avro = "1.12.1"
 avroPlugin = "1.9.1"
 dependencyManagement = "1.1.7"
-gradleWrapperUpgrade = "0.12"
 kotlin = "2.3.0"
 kotlinLogging = "7.0.14"
 mockk = "1.14.7"
@@ -51,4 +50,3 @@ mavenPublish = { id = "org.gradle.maven-publish" }
 sonarqube = { id = "org.sonarqube", version.ref = "sonarqube" }
 spotless = { id = "com.diffplug.spotless", version.ref = "spotless" }
 spring = { id = "org.jetbrains.kotlin.plugin.spring", version.ref = "kotlin" }
-gradleWrapperUpgrade = { id = "org.gradle.wrapper-upgrade", version.ref = "gradleWrapperUpgrade" }
