@@ -12,8 +12,8 @@ kotlinLogging = "7.0.14"
 mockk = "1.14.7"
 msal4j = "1.23.1"
 sonarqube = "7.2.2.6593"
-spotless = "8.1.0"
-springBoot = "4.0.1"
+spotless = "8.2.0"
+springBoot = "4.0.2"
 springmockk = "5.0.1"
 
 [libraries]
