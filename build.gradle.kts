@@ -11,7 +11,6 @@ plugins {
     alias(libs.plugins.spring) apply false
     alias(libs.plugins.sonarqube)
     alias(libs.plugins.spotless)
-    alias(libs.plugins.gradleWrapperUpgrade)
 }
 
 sonar {
@@ -23,19 +22,10 @@ sonar {
 }
 group = "com.gxf.utilities"
 version = System.getenv("GITHUB_REF_NAME")
-            ?.replace("/", "-")
-            ?.lowercase()
-            ?.let { if (SemVer.valid(it)) it.removePrefix("v") else "${it}-SNAPSHOT" }
-        ?: "develop"
-
-wrapperUpgrade {
-    gradle {
-        register("gxf-java-utilities") {
-            repo.set("OSGP/gxf-java-utilities")
-            baseBranch.set("main")
-        }
-    }
-}
+    ?.replace("/", "-")
+    ?.lowercase()
+    ?.let { if (SemVer.valid(it)) it.removePrefix("v") else "${it}-SNAPSHOT" }
+    ?: "develop"
 
 subprojects {
     apply(plugin = rootProject.libs.plugins.kotlin.get().pluginId)
@@ -82,9 +72,7 @@ subprojects {
             ktfmt().kotlinlangStyle().configure {
                 it.setMaxWidth(120)
             }
-            licenseHeaderFile(
-                "${project.rootDir}/license-template.kt",
-                "package")
+            licenseHeaderFile("${project.rootDir}/license-template.kt", "package")
                 .updateYearWithLatest(false)
         }
     }
@@ -100,6 +88,14 @@ subprojects {
                     password = System.getenv("GITHUB_TOKEN")
                 }
             }
+            maven {
+                name = "Artifactory"
+                url = System.getenv("ARTIFACTORY_URL")?.let { URI.create(it) }
+                credentials {
+                    username = System.getenv("ARTIFACTORY_USER")
+                    password = System.getenv("ARTIFACTORY_PASSWORD")
+                }
+            }
         }
         publications {
             create<MavenPublication>("java") {
@@ -108,7 +104,7 @@ subprojects {
         }
     }
 
-    tasks.register<DependencyReportTask>("dependenciesAll"){
+    tasks.register<DependencyReportTask>("dependenciesAll") {
         description = "Displays all dependencies declared in all sub projects"
         group = "help"
     }
