@@ -10,7 +10,10 @@ on:
   pull_request:
     branches: [ "main" ]
 
-permissions: write-all
+permissions:
+  pull-requests: write
+  checks: write
+  packages: write
 
 jobs:
   build:
