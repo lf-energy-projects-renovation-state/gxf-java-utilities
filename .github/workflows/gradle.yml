@@ -46,6 +46,3 @@ jobs:
         env:
           GITHUB_ACTOR: ${{ github.actor }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          ARTIFACTORY_URL: ${{ secrets.ARTIFACTORY_URL }}
-          ARTIFACTORY_USER: ${{ secrets.ARTIFACTORY_USER }}
-          ARTIFACTORY_PASSWORD: ${{ secrets.ARTIFACTORY_PASSWORD }}
