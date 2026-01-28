@@ -88,17 +88,6 @@ subprojects {
                     password = System.getenv("GITHUB_TOKEN")
                 }
             }
-            // the URL can't be null so the artifactory config needs to be optional
-            System.getenv("ARTIFACTORY_URL")?.let{ artifactoryUrl ->
-                maven {
-                    name = "Artifactory"
-                    url = URI(artifactoryUrl)
-                    credentials {
-                        username = System.getenv("ARTIFACTORY_USER")
-                        password = System.getenv("ARTIFACTORY_PASSWORD")
-                    }
-                }
-            }
         }
         publications {
             create<MavenPublication>("java") {
