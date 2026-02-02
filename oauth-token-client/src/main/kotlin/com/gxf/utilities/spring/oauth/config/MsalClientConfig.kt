@@ -9,13 +9,13 @@ import com.microsoft.aad.msal4j.ClientCredentialFactory
 import com.microsoft.aad.msal4j.ClientCredentialParameters
 import com.microsoft.aad.msal4j.ConfidentialClientApplication
 import com.microsoft.aad.msal4j.IClientCredential
+import io.github.oshai.kotlinlogging.KotlinLogging
 import java.security.KeyFactory
 import java.security.PrivateKey
 import java.security.cert.CertificateFactory
 import java.security.cert.X509Certificate
 import java.security.spec.PKCS8EncodedKeySpec
 import java.util.Base64
-import org.slf4j.LoggerFactory
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Conditional
 import org.springframework.context.annotation.Configuration
@@ -26,9 +26,10 @@ import org.springframework.core.io.Resource
 class MsalClientConfig {
 
     companion object {
-        private val LOGGER = LoggerFactory.getLogger(MsalClientConfig::class.java)
         private val PEM_REMOVAL_PATTERN = Regex("-----[A-Z ]*-----")
     }
+
+    private val logger = KotlinLogging.logger {}
 
     @Bean
     fun clientCredentialParameters(properties: OAuthClientProperties): ClientCredentialParameters =
@@ -59,7 +60,7 @@ class MsalClientConfig {
         }
 
         try {
-            LOGGER.info("Reading private key: ${resource.description}")
+            logger.info { "Reading private key: ${resource.description}" }
             val privateKeyContent = readPEMFile(resource)
             val keySpecPKCS8 = PKCS8EncodedKeySpec(Base64.getDecoder().decode(privateKeyContent))
             return KeyFactory.getInstance("RSA").generatePrivate(keySpecPKCS8)
@@ -76,7 +77,7 @@ class MsalClientConfig {
         }
 
         try {
-            LOGGER.info("Reading certificate: ${resource.description}")
+            logger.info { "Reading certificate: ${resource.description}" }
             val certificateContent = readPEMFile(resource)
             val inputStream = Base64.getDecoder().decode(certificateContent).inputStream()
             return CertificateFactory.getInstance("X.509").generateCertificate(inputStream) as X509Certificate

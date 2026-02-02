@@ -1,6 +1,7 @@
 dependencies{
     implementation(libs.springBoot)
     implementation(libs.kotlinReflect)
+    implementation(libs.kotlinLoggingJvm)
     implementation(libs.msal)
 
     // Used to generate properties metadata
