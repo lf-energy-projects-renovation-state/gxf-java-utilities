@@ -6,7 +6,7 @@
 avro = "1.12.1"
 avroPlugin = "1.9.1"
 dependencyManagement = "1.1.7"
-kotlin = "2.3.0"
+kotlin = "2.3.10"
 kotlinLogging = "7.0.14"
 mockk = "1.14.7"
 msal4j = "1.23.1"
