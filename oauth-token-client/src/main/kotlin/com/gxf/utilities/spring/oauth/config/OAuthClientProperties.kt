@@ -12,6 +12,7 @@ data class OAuthClientProperties(
     val clientId: String?,
     val scope: String?,
     val tokenEndpoint: String?,
+    val clientAssertion: Resource?,
     val certificate: Resource?,
     val privateKey: Resource?,
 )

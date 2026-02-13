@@ -5,7 +5,6 @@ package com.gxf.utilities.spring.oauth
 
 import com.gxf.utilities.spring.oauth.config.MsalClientConfig
 import com.gxf.utilities.spring.oauth.config.OAuthClientProperties
-import com.gxf.utilities.spring.oauth.providers.FileTokenProvider
 import com.gxf.utilities.spring.oauth.providers.MsalTokenProvider
 import com.gxf.utilities.spring.oauth.providers.NoTokenProvider
 import org.springframework.boot.context.properties.EnableConfigurationProperties
@@ -14,5 +13,5 @@ import org.springframework.stereotype.Component
 
 @Component
 @EnableConfigurationProperties(OAuthClientProperties::class)
-@Import(MsalClientConfig::class, MsalTokenProvider::class, FileTokenProvider::class, NoTokenProvider::class)
+@Import(MsalClientConfig::class, MsalTokenProvider::class, NoTokenProvider::class)
 class OAuthTokenClientContext

@@ -16,6 +16,7 @@ import java.security.cert.CertificateFactory
 import java.security.cert.X509Certificate
 import java.security.spec.PKCS8EncodedKeySpec
 import java.util.Base64
+import java.util.concurrent.Callable
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Conditional
 import org.springframework.context.annotation.Configuration
@@ -38,10 +39,16 @@ class MsalClientConfig {
     @Bean
     fun confidentialClientApplication(properties: OAuthClientProperties): ConfidentialClientApplication {
         val credential: IClientCredential =
-            ClientCredentialFactory.createFromCertificate(
-                getPrivateKey(properties.privateKey),
-                getCertificate(properties.certificate),
-            )
+            if (properties.clientAssertion != null) {
+                logger.info { "Using client assertion for msal credentials" }
+                ClientCredentialFactory.createFromCallback(getClientAssertionCallable(properties.clientAssertion))
+            } else {
+                logger.info { "Using certificates for msal credentials" }
+                ClientCredentialFactory.createFromCertificate(
+                    getPrivateKey(properties.privateKey),
+                    getCertificate(properties.certificate),
+                )
+            }
         return try {
             ConfidentialClientApplication.builder(properties.clientId, credential)
                 .authority(properties.tokenEndpoint)
@@ -84,6 +91,21 @@ class MsalClientConfig {
         } catch (e: Exception) {
             throw OAuthTokenException("Error getting certificate", e)
         }
+    }
+
+    /**
+     * Validates if the client assertion resource is readable and not empty on init. The function then returns a
+     * callable of the file contents because the client assertion might refresh while the application is running.
+     */
+    fun getClientAssertionCallable(resource: Resource): Callable<String> {
+        if (!resource.isReadable) {
+            throw OAuthTokenException("Client assertion ${resource.description} is not readable")
+        }
+        if (resource.contentLength() == 0L) {
+            throw OAuthTokenException("Client assertion ${resource.description} is empty")
+        }
+
+        return { resource.contentAsByteArray.decodeToString().trim() }
     }
 
     private fun readPEMFile(resource: Resource): String =
