@@ -97,7 +97,7 @@ class MsalClientConfig {
      * Validates if the client assertion resource is readable and not empty on init. The function then returns a
      * callable of the file contents because the client assertion might refresh while the application is running.
      */
-    fun getClientAssertionCallable(resource: Resource): Callable<String> {
+    private fun getClientAssertionCallable(resource: Resource): Callable<String> {
         if (!resource.isReadable) {
             throw OAuthTokenException("Client assertion ${resource.description} is not readable")
         }
