@@ -20,30 +20,29 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.test.context.TestPropertySource
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig
 
-@SpringJUnitConfig(OAuthTokenClientContext::class)
-@TestPropertySource("classpath:oauth-msal.properties")
 class MsalTokenProviderTest {
 
+    class TestAuthenticationResult(val accessToken: String) : IAuthenticationResult {
+        override fun accessToken(): String = accessToken
+
+        override fun idToken(): String? = null
+
+        override fun account(): IAccount? = null
+
+        override fun tenantProfile(): ITenantProfile? = null
+
+        override fun environment(): String? = null
+
+        override fun scopes(): String? = null
+
+        override fun expiresOnDate(): Date? = null
+    }
+
     @Nested
-    inner class TestMsalConfiguration {
-        inner class TestAuthenticationResult(val accessToken: String) : IAuthenticationResult {
-            override fun accessToken(): String = accessToken
-
-            override fun idToken(): String? = null
-
-            override fun account(): IAccount? = null
-
-            override fun tenantProfile(): ITenantProfile? = null
-
-            override fun environment(): String? = null
-
-            override fun scopes(): String? = null
-
-            override fun expiresOnDate(): Date? = null
-        }
-
+    @SpringJUnitConfig(OAuthTokenClientContext::class)
+    @TestPropertySource("classpath:oauth-msal-keypair.properties")
+    inner class TestMsalKeyPairConfiguration {
         @MockkBean lateinit var confidentialClientApplication: ConfidentialClientApplication
-
         @Autowired lateinit var tokenProvider: TokenProvider
 
         @Test
@@ -57,7 +56,40 @@ class MsalTokenProviderTest {
     }
 
     @Nested
-    inner class TestMsalTokenProvider {
+    @SpringJUnitConfig(OAuthTokenClientContext::class)
+    @TestPropertySource("classpath:oauth-msal-client-assertion.properties")
+    inner class TestMsalClientAssertionConfiguration {
+        @MockkBean lateinit var confidentialClientApplication: ConfidentialClientApplication
+        @Autowired lateinit var tokenProvider: TokenProvider
+
+        @Test
+        fun `should retrieve token from msal library`() {
+            val testToken = "test-token-value"
+            every { confidentialClientApplication.acquireToken(any<ClientCredentialParameters>()) } returns
+                CompletableFuture.supplyAsync { TestAuthenticationResult(testToken) }
+
+            assertThat(tokenProvider.getAccessToken()).contains(testToken)
+        }
+    }
+
+    @Nested
+    @SpringJUnitConfig(OAuthTokenClientContext::class)
+    @TestPropertySource("classpath:oauth-msal-keypair.properties")
+    inner class TestMsalKeyPairTokenProvider {
+
+        @Autowired lateinit var tokenProvider: TokenProvider
+
+        @Test
+        fun `msal token provider should bootstrap if confidential client application is not mocked`() {
+            // The msal4j library is very hard to mock properly
+            assertThat(tokenProvider).isNotNull()
+        }
+    }
+
+    @Nested
+    @SpringJUnitConfig(OAuthTokenClientContext::class)
+    @TestPropertySource("classpath:oauth-msal-client-assertion.properties")
+    inner class TestMsalClientAssertionTokenProvider {
 
         @Autowired lateinit var tokenProvider: TokenProvider
 

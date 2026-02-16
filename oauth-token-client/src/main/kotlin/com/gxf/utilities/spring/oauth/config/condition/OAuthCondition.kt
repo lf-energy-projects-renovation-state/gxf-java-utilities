@@ -7,18 +7,7 @@ import org.springframework.context.annotation.Condition
 import org.springframework.context.annotation.ConditionContext
 import org.springframework.core.type.AnnotatedTypeMetadata
 
-class OAuthTokenFileEnabledCondition : Condition {
-    override fun matches(context: ConditionContext, metadata: AnnotatedTypeMetadata): Boolean =
-        oAuthEnabled(context) && tokenLocationPresent(context)
-}
-
 class OAuthMsalEnabledCondition : Condition {
     override fun matches(context: ConditionContext, metadata: AnnotatedTypeMetadata): Boolean =
-        oAuthEnabled(context) && !tokenLocationPresent(context)
+        context.environment.getProperty("oauth.client.enabled").equals("true", ignoreCase = true)
 }
-
-private fun oAuthEnabled(context: ConditionContext) =
-    context.environment.getProperty("oauth.client.enabled").equals("true", ignoreCase = true)
-
-private fun tokenLocationPresent(context: ConditionContext) =
-    !context.environment.getProperty("oauth.client.token-location").isNullOrBlank()
