@@ -3,10 +3,10 @@
 // SPDX-License-Identifier: Apache-2.0
 package com.gxf.utilities.kafka.message.signing
 
+import org.springframework.core.io.ClassPathResource
 import java.nio.ByteBuffer
 import java.security.SecureRandom
 import java.util.Random
-import org.springframework.core.io.ClassPathResource
 
 object TestConstants {
     val messageSignerProperties =

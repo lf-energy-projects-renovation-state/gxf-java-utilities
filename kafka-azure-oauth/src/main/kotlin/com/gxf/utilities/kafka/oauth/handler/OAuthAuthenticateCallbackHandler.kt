@@ -6,13 +6,6 @@ package com.gxf.utilities.kafka.oauth.handler
 import com.microsoft.aad.msal4j.ClientCredentialFactory
 import com.microsoft.aad.msal4j.ClientCredentialParameters
 import com.microsoft.aad.msal4j.ConfidentialClientApplication
-import java.io.File
-import java.io.IOException
-import java.nio.charset.StandardCharsets
-import java.nio.file.Files
-import javax.security.auth.callback.Callback
-import javax.security.auth.callback.UnsupportedCallbackException
-import javax.security.auth.login.AppConfigurationEntry
 import org.apache.kafka.common.config.ConfigException
 import org.apache.kafka.common.security.auth.AuthenticateCallbackHandler
 import org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule
@@ -21,6 +14,13 @@ import org.apache.kafka.common.security.oauthbearer.OAuthBearerTokenCallback
 import org.apache.kafka.common.security.oauthbearer.OAuthBearerValidatorCallback
 import org.apache.kafka.common.security.oauthbearer.internals.secured.BasicOAuthBearerToken
 import org.slf4j.LoggerFactory
+import java.io.File
+import java.io.IOException
+import java.nio.charset.StandardCharsets
+import java.nio.file.Files
+import javax.security.auth.callback.Callback
+import javax.security.auth.callback.UnsupportedCallbackException
+import javax.security.auth.login.AppConfigurationEntry
 
 class OAuthAuthenticateCallbackHandler : AuthenticateCallbackHandler {
     internal lateinit var tokenFilePath: String
@@ -47,7 +47,7 @@ class OAuthAuthenticateCallbackHandler : AuthenticateCallbackHandler {
 
     private fun getOptions(saslMechanism: String, jaasConfigEntries: List<AppConfigurationEntry>): Map<String, Any?> {
         require(saslMechanism == OAuthBearerLoginModule.OAUTHBEARER_MECHANISM) {
-            "Unexpected SASL mechanism: ${saslMechanism}"
+            "Unexpected SASL mechanism: $saslMechanism"
         }
         require(jaasConfigEntries.size == 1) {
             "Must supply exactly 1 non-null JAAS mechanism configuration (size was ${jaasConfigEntries.size})"
@@ -79,8 +79,10 @@ class OAuthAuthenticateCallbackHandler : AuthenticateCallbackHandler {
         for (callback in callbacks) {
             when (callback) {
                 is OAuthBearerTokenCallback -> callback.token(getToken())
+
                 is OAuthBearerValidatorCallback ->
                     throw UnsupportedCallbackException(callback, "Validate callback not yet implemented")
+
                 else -> throw UnsupportedCallbackException(callback, "Unknown callback type ${callback.javaClass.name}")
             }
         }

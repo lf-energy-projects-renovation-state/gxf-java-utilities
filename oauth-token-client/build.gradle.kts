@@ -1,4 +1,4 @@
-dependencies{
+dependencies {
     implementation(libs.springBoot)
     implementation(libs.kotlinReflect)
     implementation(libs.kotlinLoggingJvm)

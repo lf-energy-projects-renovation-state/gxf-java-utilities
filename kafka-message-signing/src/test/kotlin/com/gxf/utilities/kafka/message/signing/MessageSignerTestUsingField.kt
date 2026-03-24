@@ -5,9 +5,9 @@ package com.gxf.utilities.kafka.message.signing
 
 import com.gxf.utilities.kafka.message.signing.TestConstants.previousPrivateKey
 import com.gxf.utilities.kafka.message.wrapper.FlexibleSignableMessageWrapper
-import java.nio.ByteBuffer
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
+import java.nio.ByteBuffer
 
 /** Only tests the `...UsingField` methods */
 class MessageSignerTestUsingField {
@@ -87,14 +87,12 @@ class MessageSignerTestUsingField {
         assertThat(verifiedSignature).isEqualTo(originalSignature)
     }
 
-    private fun messageWrapper(): FlexibleSignableMessageWrapper<MessageWithSignature> {
-        return FlexibleSignableMessageWrapper(
-            message(),
-            messageGetter = { ByteBuffer.wrap(it.payload.toByteArray()) },
-            signatureGetter = { it.signature ?: ByteBuffer.allocate(0) },
-            signatureSetter = { message, signature -> message.signature = signature },
-        )
-    }
+    private fun messageWrapper(): FlexibleSignableMessageWrapper<MessageWithSignature> = FlexibleSignableMessageWrapper(
+        message(),
+        messageGetter = { ByteBuffer.wrap(it.payload.toByteArray()) },
+        signatureGetter = { it.signature ?: ByteBuffer.allocate(0) },
+        signatureSetter = { message, signature -> message.signature = signature },
+    )
 
     private fun messageWrapper(signature: ByteBuffer): FlexibleSignableMessageWrapper<MessageWithSignature> {
         val testableWrapper = messageWrapper()
@@ -114,9 +112,7 @@ class MessageSignerTestUsingField {
         return messageWrapper
     }
 
-    private fun message(): MessageWithSignature {
-        return MessageWithSignature("super special message")
-    }
+    private fun message(): MessageWithSignature = MessageWithSignature("super special message")
 
     internal class MessageWithSignature(var payload: String, var signature: ByteBuffer? = null)
 }

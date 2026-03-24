@@ -4,10 +4,10 @@
 package com.gxf.utilities.oslp.message.signing
 
 import com.gxf.utilities.oslp.message.signing.configuration.SigningProperties
-import java.security.KeyPair
-import java.security.KeyPairGenerator
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
+import java.security.KeyPair
+import java.security.KeyPairGenerator
 
 class SigningUtilTest {
 

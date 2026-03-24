@@ -65,7 +65,7 @@ internal class MsalClientConfigTest {
         fun `should read base 64 private key`() {
             val privateKey =
                 client.getPrivateKey(
-                    ByteArrayResource(ClassPathResource("keys/private-key.key").inputStream.readAllBytes())
+                    ByteArrayResource(ClassPathResource("keys/private-key.key").inputStream.readAllBytes()),
                 )
             assertThat(privateKey).isNotNull()
         }
@@ -100,7 +100,7 @@ internal class MsalClientConfigTest {
         fun `should read base 64 resource`() {
             val certificate =
                 client.getCertificate(
-                    ByteArrayResource(ClassPathResource("keys/certificate.crt").inputStream.readAllBytes())
+                    ByteArrayResource(ClassPathResource("keys/certificate.crt").inputStream.readAllBytes()),
                 )
             assertThat(certificate).isNotNull()
         }

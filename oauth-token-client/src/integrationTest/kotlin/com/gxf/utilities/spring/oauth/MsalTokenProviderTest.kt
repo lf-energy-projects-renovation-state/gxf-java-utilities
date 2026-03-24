@@ -11,14 +11,14 @@ import com.microsoft.aad.msal4j.IAuthenticationResult
 import com.microsoft.aad.msal4j.ITenantProfile
 import com.ninjasquad.springmockk.MockkBean
 import io.mockk.every
-import java.util.Date
-import java.util.concurrent.CompletableFuture
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.test.context.TestPropertySource
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig
+import java.util.Date
+import java.util.concurrent.CompletableFuture
 
 class MsalTokenProviderTest {
 
@@ -43,6 +43,7 @@ class MsalTokenProviderTest {
     @TestPropertySource("classpath:oauth-msal-keypair.properties")
     inner class TestMsalKeyPairConfiguration {
         @MockkBean lateinit var confidentialClientApplication: ConfidentialClientApplication
+
         @Autowired lateinit var tokenProvider: TokenProvider
 
         @Test
@@ -60,6 +61,7 @@ class MsalTokenProviderTest {
     @TestPropertySource("classpath:oauth-msal-client-assertion.properties")
     inner class TestMsalClientAssertionConfiguration {
         @MockkBean lateinit var confidentialClientApplication: ConfidentialClientApplication
+
         @Autowired lateinit var tokenProvider: TokenProvider
 
         @Test

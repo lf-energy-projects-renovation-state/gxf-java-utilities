@@ -7,13 +7,13 @@ import com.gxf.utilities.kafka.oauth.handler.OAuthAuthenticateCallbackHandler.Co
 import com.gxf.utilities.kafka.oauth.handler.OAuthAuthenticateCallbackHandler.Companion.SCOPE_CONFIG
 import com.gxf.utilities.kafka.oauth.handler.OAuthAuthenticateCallbackHandler.Companion.TOKEN_ENDPOINT_CONFIG
 import com.gxf.utilities.kafka.oauth.handler.OAuthAuthenticateCallbackHandler.Companion.TOKEN_FILE_CONFIG
-import java.lang.IllegalArgumentException
-import javax.security.auth.login.AppConfigurationEntry
-import javax.security.auth.login.AppConfigurationEntry.LoginModuleControlFlag.REQUIRED
 import org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule
 import org.assertj.core.api.Assertions
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
+import java.lang.IllegalArgumentException
+import javax.security.auth.login.AppConfigurationEntry
+import javax.security.auth.login.AppConfigurationEntry.LoginModuleControlFlag.REQUIRED
 
 class OAuthAuthenticateCallbackHandlerTest {
 
@@ -45,8 +45,8 @@ class OAuthAuthenticateCallbackHandlerTest {
         val handler = OAuthAuthenticateCallbackHandler()
 
         Assertions.assertThatThrownBy {
-                handler.configure(emptyMap<String?, Any>(), OAuthBearerLoginModule.OAUTHBEARER_MECHANISM, emptyList())
-            }
+            handler.configure(emptyMap<String?, Any>(), OAuthBearerLoginModule.OAUTHBEARER_MECHANISM, emptyList())
+        }
             .isInstanceOf(IllegalArgumentException::class.java)
             .hasMessage("Must supply exactly 1 non-null JAAS mechanism configuration (size was 0)")
     }
@@ -67,11 +67,10 @@ class OAuthAuthenticateCallbackHandlerTest {
             .hasMessage("Could not read Token file from: non-existent-file")
     }
 
-    private fun options() =
-        mapOf(
-            CLIENT_ID_CONFIG to clientId,
-            TOKEN_ENDPOINT_CONFIG to tokenEndpoint,
-            SCOPE_CONFIG to scopes,
-            TOKEN_FILE_CONFIG to tokenFilePath,
-        )
+    private fun options() = mapOf(
+        CLIENT_ID_CONFIG to clientId,
+        TOKEN_ENDPOINT_CONFIG to tokenEndpoint,
+        SCOPE_CONFIG to scopes,
+        TOKEN_FILE_CONFIG to tokenFilePath,
+    )
 }

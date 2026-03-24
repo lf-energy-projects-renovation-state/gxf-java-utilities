@@ -18,7 +18,8 @@ class FlexibleSignableMessageWrapper<T>(
 ) {
 
     /** @return ByteBuffer of the whole message */
-    @Throws(IOException::class) internal fun toByteBuffer(): ByteBuffer = messageGetter(message)
+    @Throws(IOException::class)
+    internal fun toByteBuffer(): ByteBuffer = messageGetter(message)
 
     /** @return ByteBuffer of the signature in the message */
     internal fun getSignature(): ByteBuffer? = signatureGetter(message)

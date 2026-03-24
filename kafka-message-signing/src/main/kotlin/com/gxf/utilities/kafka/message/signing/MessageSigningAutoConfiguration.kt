@@ -16,7 +16,5 @@ class MessageSigningAutoConfiguration {
     // Only instantiate when no other bean has been configured
     @ConditionalOnMissingBean
     @Bean
-    fun messageSigner(signingProperties: MessageSigningProperties): MessageSigner {
-        return MessageSigner(signingProperties)
-    }
+    fun messageSigner(signingProperties: MessageSigningProperties): MessageSigner = MessageSigner(signingProperties)
 }

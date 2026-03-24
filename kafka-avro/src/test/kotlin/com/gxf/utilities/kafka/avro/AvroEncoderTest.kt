@@ -5,9 +5,9 @@ package com.gxf.utilities.kafka.avro
 
 import com.alliander.gxf.utilities.kafka.avro.AvroSchema1
 import com.alliander.gxf.utilities.kafka.avro.AvroSchema2
-import java.io.ByteArrayOutputStream
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
+import java.io.ByteArrayOutputStream
 
 class AvroEncoderTest {
     @Test

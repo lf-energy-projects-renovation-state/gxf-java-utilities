@@ -7,9 +7,9 @@ import com.gxf.utilities.spring.oauth.config.condition.OAuthMsalEnabledCondition
 import com.microsoft.aad.msal4j.ClientCredentialParameters
 import com.microsoft.aad.msal4j.ConfidentialClientApplication
 import com.microsoft.aad.msal4j.IAuthenticationResult
-import java.util.Optional
 import org.springframework.context.annotation.Conditional
 import org.springframework.stereotype.Component
+import java.util.Optional
 
 @Component
 @Conditional(OAuthMsalEnabledCondition::class)

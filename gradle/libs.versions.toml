@@ -6,13 +6,13 @@
 avro = "1.12.1"
 avroPlugin = "1.9.1"
 dependencyManagement = "1.1.7"
-kotlin = "2.3.10"
+kotlin = "2.3.20"
 kotlinLogging = "8.0.01"
 mockk = "1.14.9"
 msal4j = "1.24.0"
-sonarqube = "7.2.2.6593"
-spotless = "8.2.1"
-springBoot = "4.0.2"
+sonarqube = "7.2.3.7755"
+spotless = "8.3.0"
+springBoot = "4.0.3"
 springmockk = "5.0.1"
 
 [libraries]

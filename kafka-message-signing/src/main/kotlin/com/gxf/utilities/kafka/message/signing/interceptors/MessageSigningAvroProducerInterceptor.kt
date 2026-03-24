@@ -13,7 +13,7 @@ class MessageSigningAvroProducerInterceptor : ProducerInterceptor<String, Specif
     private lateinit var messageSigner: MessageSigner
 
     override fun onSend(
-        producerRecord: ProducerRecord<String, SpecificRecordBase>
+        producerRecord: ProducerRecord<String, SpecificRecordBase>,
     ): ProducerRecord<String, SpecificRecordBase> = messageSigner.signUsingHeader(producerRecord)
 
     override fun onAcknowledgement(metadata: RecordMetadata?, exception: Exception?) {
