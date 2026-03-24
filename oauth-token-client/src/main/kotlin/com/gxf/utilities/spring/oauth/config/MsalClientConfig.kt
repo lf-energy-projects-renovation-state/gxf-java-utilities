@@ -10,6 +10,10 @@ import com.microsoft.aad.msal4j.ClientCredentialParameters
 import com.microsoft.aad.msal4j.ConfidentialClientApplication
 import com.microsoft.aad.msal4j.IClientCredential
 import io.github.oshai.kotlinlogging.KotlinLogging
+import org.springframework.context.annotation.Bean
+import org.springframework.context.annotation.Conditional
+import org.springframework.context.annotation.Configuration
+import org.springframework.core.io.Resource
 import java.security.KeyFactory
 import java.security.PrivateKey
 import java.security.cert.CertificateFactory
@@ -17,10 +21,6 @@ import java.security.cert.X509Certificate
 import java.security.spec.PKCS8EncodedKeySpec
 import java.util.Base64
 import java.util.concurrent.Callable
-import org.springframework.context.annotation.Bean
-import org.springframework.context.annotation.Conditional
-import org.springframework.context.annotation.Configuration
-import org.springframework.core.io.Resource
 
 @Configuration
 @Conditional(OAuthMsalEnabledCondition::class)

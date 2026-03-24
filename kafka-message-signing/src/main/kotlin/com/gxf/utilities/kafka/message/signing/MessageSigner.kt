@@ -7,6 +7,13 @@ import com.gxf.utilities.kafka.avro.AvroEncoder
 import com.gxf.utilities.kafka.message.wrapper.FlexibleSignableMessageWrapper
 import com.gxf.utilities.kafka.message.wrapper.SignableMessageWrapper
 import io.github.oshai.kotlinlogging.KotlinLogging
+import org.apache.avro.specific.SpecificRecordBase
+import org.apache.kafka.clients.consumer.ConsumerRecord
+import org.apache.kafka.clients.producer.ProducerRecord
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
+import org.springframework.boot.ssl.pem.PemContent
+import org.springframework.core.io.Resource
+import org.springframework.stereotype.Component
 import java.io.IOException
 import java.io.UncheckedIOException
 import java.nio.ByteBuffer
@@ -21,13 +28,6 @@ import java.security.SignatureException
 import java.security.spec.X509EncodedKeySpec
 import java.util.Base64
 import java.util.regex.Pattern
-import org.apache.avro.specific.SpecificRecordBase
-import org.apache.kafka.clients.consumer.ConsumerRecord
-import org.apache.kafka.clients.producer.ProducerRecord
-import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
-import org.springframework.boot.ssl.pem.PemContent
-import org.springframework.core.io.Resource
-import org.springframework.stereotype.Component
 
 @Component
 // Only instantiate when no other bean has been configured
@@ -213,9 +213,7 @@ class MessageSigner(properties: MessageSigningProperties) {
      * @return `true` if this message signer is configured for signature verification and has a public key; `false` if
      *   not.
      */
-    fun canVerifyMessageSignatures(key: PublicKey? = verificationKey): Boolean {
-        return signingEnabled && key != null
-    }
+    fun canVerifyMessageSignatures(key: PublicKey? = verificationKey): Boolean = signingEnabled && key != null
 
     /**
      * Verifies the signature of the provided `message` using the signature in a message field.
@@ -345,11 +343,9 @@ class MessageSigner(properties: MessageSigningProperties) {
         return verificationSignature.verify(signatureBytes.array())
     }
 
-    private fun hasAvroHeader(bytes: ByteBuffer): Boolean {
-        return (bytes.array().size >= AVRO_HEADER_LENGTH) &&
-            ((bytes[0].toInt() and 0xFF) == 0xC3) &&
-            ((bytes[1].toInt() and 0xFF) == 0x01)
-    }
+    private fun hasAvroHeader(bytes: ByteBuffer): Boolean = (bytes.array().size >= AVRO_HEADER_LENGTH) &&
+        ((bytes[0].toInt() and 0xFF) == 0xC3) &&
+        ((bytes[1].toInt() and 0xFF) == 0x01)
 
     private fun stripAvroHeader(bytes: ByteBuffer): ByteBuffer {
         if (hasAvroHeader(bytes)) {
@@ -374,16 +370,14 @@ class MessageSigner(properties: MessageSigningProperties) {
         }
     }
 
-    override fun toString(): String {
-        return String.format(
-            "MessageSigner[algorithm=\"%s\"-\"%s\", provider=\"%s\", sign=%b, verify=%b]",
-            signatureAlgorithm,
-            keyAlgorithm,
-            signatureProvider,
-            canSignMessages(),
-            canVerifyMessageSignatures(),
-        )
-    }
+    override fun toString(): String = String.format(
+        "MessageSigner[algorithm=\"%s\"-\"%s\", provider=\"%s\", sign=%b, verify=%b]",
+        signatureAlgorithm,
+        keyAlgorithm,
+        signatureProvider,
+        canSignMessages(),
+        canVerifyMessageSignatures(),
+    )
 
     companion object {
         // Two magic bytes (0xC3, 0x01) followed by an 8-byte fingerprint

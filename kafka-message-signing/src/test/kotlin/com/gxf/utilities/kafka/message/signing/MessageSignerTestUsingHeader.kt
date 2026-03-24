@@ -93,30 +93,20 @@ class MessageSignerTestUsingHeader {
         return producerRecordToConsumerRecord(producerRecord)
     }
 
-    private fun producerRecord(): ProducerRecord<String, Message> {
-        return ProducerRecord("topic", message())
-    }
+    private fun producerRecord(): ProducerRecord<String, Message> = ProducerRecord("topic", message())
 
-    private fun consumerRecord(): ConsumerRecord<String, Message> {
-        return ConsumerRecord("topic", 0, 123L, null, message())
-    }
+    private fun consumerRecord(): ConsumerRecord<String, Message> = ConsumerRecord("topic", 0, 123L, null, message())
 
-    private fun message(): Message {
-        return Message("super special message")
-    }
+    private fun message(): Message = Message("super special message")
 
     internal class Message(private var message: String?) : SpecificRecordBase() {
 
-        override fun getSchema(): Schema {
-            return Schema.Parser()
-                .parse(
-                    """{"type":"record","name":"Message","namespace":"com.alliander.osgp.kafka.message.signing","fields":[{"name":"message","type":{"type":"string","avro.java.string":"String"}}]}"""
-                )
-        }
+        override fun getSchema(): Schema = Schema.Parser()
+            .parse(
+                """{"type":"record","name":"Message","namespace":"com.alliander.osgp.kafka.message.signing","fields":[{"name":"message","type":{"type":"string","avro.java.string":"String"}}]}""",
+            )
 
-        override fun get(field: Int): Any {
-            return message!!
-        }
+        override fun get(field: Int): Any = message!!
 
         override fun put(field: Int, value: Any) {
             message = value.toString()

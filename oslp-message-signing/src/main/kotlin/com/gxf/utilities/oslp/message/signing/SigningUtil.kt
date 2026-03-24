@@ -12,14 +12,13 @@ import java.security.Signature
 
 open class SigningUtil(val signingConfiguration: SigningProperties) {
 
-    fun createSignature(message: ByteArray, privateKey: PrivateKey): ByteArray {
-        return Signature.getInstance(signingConfiguration.securityAlgorithm, signingConfiguration.securityProvider)
+    fun createSignature(message: ByteArray, privateKey: PrivateKey): ByteArray =
+        Signature.getInstance(signingConfiguration.securityAlgorithm, signingConfiguration.securityProvider)
             .apply {
                 initSign(privateKey, SecureRandom())
                 update(message)
             }
             .sign()
-    }
 
     fun verifySignature(message: ByteArray, securityKey: ByteArray, publicKey: PublicKey): Boolean {
         val builder =

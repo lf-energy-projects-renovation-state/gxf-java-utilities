@@ -21,6 +21,6 @@ dependencies {
 
 tasks.withType<KotlinCompile> {
     dependsOn(
-        tasks.withType<GenerateAvroJavaTask>()
+        tasks.withType<GenerateAvroJavaTask>(),
     )
 }

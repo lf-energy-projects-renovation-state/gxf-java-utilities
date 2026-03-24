@@ -14,7 +14,8 @@ import java.nio.ByteBuffer
 abstract class SignableMessageWrapper<T>(val message: T) {
 
     /** @return ByteBuffer of the whole message */
-    @Throws(IOException::class) abstract fun toByteBuffer(): ByteBuffer
+    @Throws(IOException::class)
+    abstract fun toByteBuffer(): ByteBuffer
 
     /** @return ByteBuffer of the signature in the message */
     abstract fun getSignature(): ByteBuffer?
@@ -23,11 +24,10 @@ abstract class SignableMessageWrapper<T>(val message: T) {
     abstract fun setSignature(signature: ByteBuffer?)
 
     // For backwards compatibility
-    internal fun toFlexibleWrapper() =
-        FlexibleSignableMessageWrapper(
-            message,
-            { _ -> toByteBuffer() },
-            { _ -> getSignature() },
-            { _, signature -> setSignature(signature) },
-        )
+    internal fun toFlexibleWrapper() = FlexibleSignableMessageWrapper(
+        message,
+        { _ -> toByteBuffer() },
+        { _ -> getSignature() },
+        { _, signature -> setSignature(signature) },
+    )
 }

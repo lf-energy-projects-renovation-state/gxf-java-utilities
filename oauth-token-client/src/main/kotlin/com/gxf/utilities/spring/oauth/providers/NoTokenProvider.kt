@@ -3,9 +3,9 @@
 // SPDX-License-Identifier: Apache-2.0
 package com.gxf.utilities.spring.oauth.providers
 
-import java.util.*
 import org.springframework.context.annotation.Fallback
 import org.springframework.stereotype.Component
+import java.util.*
 
 @Component
 @Fallback

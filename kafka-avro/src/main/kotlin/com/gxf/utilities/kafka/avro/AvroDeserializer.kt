@@ -29,7 +29,7 @@ class AvroDeserializer(deserializerSchemas: List<Schema>) : Deserializer<Specifi
             logger.trace("Deserializing for {}", topic)
             return decoder.decode(payload)
         } catch (ex: Exception) {
-            throw SerializationException("Error deserializing Avro message for topic: ${topic}", ex)
+            throw SerializationException("Error deserializing Avro message for topic: $topic", ex)
         }
     }
 }
