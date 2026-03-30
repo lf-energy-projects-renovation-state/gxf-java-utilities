@@ -17,13 +17,13 @@ class AvroSerializer : Serializer<SpecificRecordBase> {
     /** Serializes a Byte Array to an Avro specific record */
     override fun serialize(topic: String?, data: SpecificRecordBase?): ByteArray {
         try {
-            if (data == null) {
-                return ByteArray(0)
+            return if (data == null) {
+                ByteArray(0)
             } else {
                 logger.trace("Serializing for {}", topic)
                 val outputStream = ByteArrayOutputStream()
                 AvroEncoder.encode(data, outputStream)
-                return outputStream.toByteArray()
+                outputStream.toByteArray()
             }
         } catch (ex: Exception) {
             throw SerializationException("Error serializing Avro message for topic: $topic", ex)
