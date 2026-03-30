@@ -3,10 +3,10 @@
 // SPDX-License-Identifier: Apache-2.0
 package com.gxf.utilities.kafka.message.signing
 
-import java.util.function.Consumer
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.apache.kafka.clients.producer.ProducerRecord
 import org.apache.kafka.common.header.Header
+import java.util.function.Consumer
 
 object TestHelper {
     fun <K, V> producerRecordToConsumerRecord(producerRecord: ProducerRecord<K, V>): ConsumerRecord<K, V> {

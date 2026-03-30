@@ -4,10 +4,10 @@
 package com.gxf.utilities.kafka.message.signing
 
 import com.gxf.utilities.kafka.message.wrapper.SignableMessageWrapper
-import java.nio.ByteBuffer
-import java.nio.charset.StandardCharsets
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
+import java.nio.ByteBuffer
+import java.nio.charset.StandardCharsets
 
 /** Only tests the now deprecated SignableMessageWrapper methods */
 class DeprecatedMessageSignerTest {
@@ -79,9 +79,7 @@ class DeprecatedMessageSignerTest {
         assertThat(verifiedSignature).isEqualTo(originalSignature)
     }
 
-    private fun messageWrapper(): TestableWrapper {
-        return TestableWrapper()
-    }
+    private fun messageWrapper(): TestableWrapper = TestableWrapper()
 
     private fun messageWrapper(signature: ByteBuffer): TestableWrapper {
         val testableWrapper = TestableWrapper()
@@ -98,16 +96,12 @@ class DeprecatedMessageSignerTest {
     private class TestableWrapper : SignableMessageWrapper<String>("Some test message") {
         private var signature: ByteBuffer? = null
 
-        override fun toByteBuffer(): ByteBuffer {
-            return ByteBuffer.wrap(message.toByteArray(StandardCharsets.UTF_8))
-        }
+        override fun toByteBuffer(): ByteBuffer = ByteBuffer.wrap(message.toByteArray(StandardCharsets.UTF_8))
 
-        override fun getSignature(): ByteBuffer? {
-            return signature
-        }
+        override fun getSignature(): ByteBuffer? = signature
 
-        override fun setSignature(newSignature: ByteBuffer?) {
-            signature = newSignature
+        override fun setSignature(signature: ByteBuffer?) {
+            this.signature = signature
         }
     }
 }

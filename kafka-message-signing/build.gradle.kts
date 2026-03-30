@@ -4,13 +4,15 @@
 
 dependencies {
     implementation(libs.springContext)
-    implementation(libs.springKafka)
-    implementation(libs.springBootAutoconfigure)
+    implementation(libs.springBootKafka)
     implementation(libs.kotlinLoggingJvm)
 
     implementation(project(":kafka-avro"))
 
     api(libs.avro)
+
+    // Used to generate properties metadata
+    kapt(libs.springBootConfigurationProcessor)
 
     testImplementation(libs.junitJupiterApi)
     testImplementation(libs.junitJupiterEngine)
@@ -34,8 +36,8 @@ testing {
             dependencies {
                 implementation(project())
                 implementation(libs.springBootStarterTest)
-                implementation(libs.springKafka)
-                implementation(libs.springKafkaTest)
+                implementation(libs.springBootKafka)
+                implementation(libs.springBootKafkaTest)
                 implementation(libs.kafkaClients)
                 implementation(libs.assertJ)
                 implementation(libs.avro)

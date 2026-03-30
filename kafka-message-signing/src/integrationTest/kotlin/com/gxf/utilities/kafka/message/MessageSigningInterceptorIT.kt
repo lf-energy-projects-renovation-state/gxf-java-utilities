@@ -10,34 +10,37 @@ import com.gxf.utilities.kafka.message.IntegrationTestHelper.createByteArrayKafk
 import com.gxf.utilities.kafka.message.signing.MessageSigner
 import com.gxf.utilities.kafka.message.signing.MessageSigningAutoConfiguration
 import com.gxf.utilities.kafka.message.signing.interceptors.MessageSigningInterceptorAutoConfiguration
-import java.time.Duration
 import org.apache.avro.specific.SpecificRecordBase
 import org.apache.kafka.clients.producer.ProducerRecord
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.boot.autoconfigure.kafka.KafkaProperties
 import org.springframework.boot.autoconfigure.ssl.SslAutoConfiguration
+import org.springframework.boot.kafka.autoconfigure.KafkaProperties
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.kafka.test.EmbeddedKafkaBroker
 import org.springframework.kafka.test.context.EmbeddedKafka
 import org.springframework.test.annotation.DirtiesContext
+import java.time.Duration
 
 @SpringBootTest(
     classes =
-        [
-            MessageSigningAutoConfiguration::class,
-            MessageSigningInterceptorAutoConfiguration::class,
-            SslAutoConfiguration::class,
-            KafkaProperties::class,
-        ]
+    [
+        MessageSigningAutoConfiguration::class,
+        MessageSigningInterceptorAutoConfiguration::class,
+        SslAutoConfiguration::class,
+        KafkaProperties::class,
+    ],
 )
 @EmbeddedKafka(topics = ["test-topic"])
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
 class MessageSigningInterceptorIT {
     @Autowired private lateinit var embeddedKafkaBroker: EmbeddedKafkaBroker
+
     @Autowired private lateinit var messageSigner: MessageSigner
+
     @Autowired private lateinit var producerPropertiesForByteArrayRecords: Map<String, Any>
+
     @Autowired private lateinit var producerPropertiesForAvroRecords: Map<String, Any>
 
     val topic = "test-topic"

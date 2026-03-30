@@ -6,14 +6,14 @@
 avro = "1.12.1"
 avroPlugin = "1.9.1"
 dependencyManagement = "1.1.7"
-kotlin = "2.3.0"
-mockk = "1.14.7"
-msal4j = "1.23.1"
-sonarqube = "7.2.1.6560"
-spotless = "8.1.0"
-gradleWrapperUpgrade = "0.12"
-springBoot = "3.5.7"
-kotlinLogging = "7.0.13"
+kotlin = "2.3.20"
+kotlinLogging = "8.0.01"
+mockk = "1.14.9"
+msal4j = "1.24.0"
+sonarqube = "7.2.3.7755"
+spotless = "8.3.0"
+springBoot = "4.0.3"
+springmockk = "5.0.1"
 
 [libraries]
 assertJ = { group = "org.assertj", name = "assertj-core" }
@@ -25,15 +25,18 @@ kafkaClients = { group = "org.apache.kafka", name = "kafka-clients" }
 mockk = { group = "io.mockk", name = "mockk", version.ref = "mockk" }
 msal = { group = "com.microsoft.azure", name = "msal4j", version.ref = "msal4j" }
 slf4jApi = { group = "org.slf4j", name = "slf4j-api" }
+kotlinReflect = { group = "org.jetbrains.kotlin", name = "kotlin-reflect", version.ref = "kotlin" }
 kotlinLoggingJvm = { group = "io.github.oshai", name = "kotlin-logging-jvm", version.ref = "kotlinLogging" }
-springBootAutoconfigure = { group = "org.springframework.boot", name = "spring-boot-autoconfigure" }
+springBoot = { group = "org.springframework.boot", name = "spring-boot" }
+springBootConfigurationProcessor = { group = "org.springframework.boot", name = "spring-boot-configuration-processor" }
 springBootDependencies = { group = "org.springframework.boot", name = "spring-boot-dependencies", version.ref = "springBoot" }
 springBootStarter = { group = "org.springframework.boot", name = "spring-boot-starter" }
 springBootStarterTest = { group = "org.springframework.boot", name = "spring-boot-starter-test" }
 springBootTest = { group = "org.springframework.boot", name = "spring-boot-test" }
 springContext = { group = "org.springframework", name = "spring-context" }
-springKafka = { group = "org.springframework.kafka", name = "spring-kafka" }
-springKafkaTest = { group = "org.springframework.kafka", name = "spring-kafka-test" }
+springBootKafka = { group = "org.springframework.boot", name = "spring-boot-starter-kafka" }
+springBootKafkaTest = { group = "org.springframework.boot", name = "spring-boot-starter-kafka-test" }
+springmockk = { group = "com.ninja-squad", name = "springmockk", version.ref = "springmockk" }
 springTest = { group = "org.springframework", name = "spring-test" }
 
 [plugins]
@@ -42,8 +45,8 @@ dependencyManagement = { id = "io.spring.dependency-management", version.ref = "
 jacoco = { id = "jacoco" }
 jacocoReportAggregation = { id = "jacoco-report-aggregation" }
 kotlin = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
+kapt = { id = "org.jetbrains.kotlin.kapt", version.ref = "kotlin" }
 mavenPublish = { id = "org.gradle.maven-publish" }
 sonarqube = { id = "org.sonarqube", version.ref = "sonarqube" }
 spotless = { id = "com.diffplug.spotless", version.ref = "spotless" }
 spring = { id = "org.jetbrains.kotlin.plugin.spring", version.ref = "kotlin" }
-gradleWrapperUpgrade = { id = "org.gradle.wrapper-upgrade", version.ref = "gradleWrapperUpgrade" }

@@ -3,23 +3,27 @@
 # SPDX-License-Identifier: Apache-2.0
 version: 2
 updates:
-  - package-ecosystem: "gradle"
-    directory: "/"
-    registries: "*"
+  - package-ecosystem: gradle
+    directory: /
     schedule:
-      interval: "daily"
+      interval: daily
     groups:
-      all:
+      minor-patch:
         update-types:
           - "minor"
           - "patch"
         patterns:
           - "*"
-  - package-ecosystem: "github-actions"
-    directory: "/"
+      major:
+        update-types:
+          - "major"
+        patterns:
+          - *
+  - package-ecosystem: github-actions
+    directory: /
     schedule:
-      interval: "weekly"
+      interval: weekly
     groups:
       all:
         patterns:
-          - "*"
+          - *

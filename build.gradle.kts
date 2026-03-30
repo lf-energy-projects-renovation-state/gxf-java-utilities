@@ -11,7 +11,6 @@ plugins {
     alias(libs.plugins.spring) apply false
     alias(libs.plugins.sonarqube)
     alias(libs.plugins.spotless)
-    alias(libs.plugins.gradleWrapperUpgrade)
 }
 
 sonar {
@@ -23,22 +22,14 @@ sonar {
 }
 group = "com.gxf.utilities"
 version = System.getenv("GITHUB_REF_NAME")
-            ?.replace("/", "-")
-            ?.lowercase()
-            ?.let { if (SemVer.valid(it)) it.removePrefix("v") else "${it}-SNAPSHOT" }
-        ?: "develop"
-
-wrapperUpgrade {
-    gradle {
-        register("gxf-java-utilities") {
-            repo.set("OSGP/gxf-java-utilities")
-            baseBranch.set("main")
-        }
-    }
-}
+    ?.replace("/", "-")
+    ?.lowercase()
+    ?.let { if (SemVer.valid(it)) it.removePrefix("v") else "${it}-SNAPSHOT" }
+    ?: "develop"
 
 subprojects {
     apply(plugin = rootProject.libs.plugins.kotlin.get().pluginId)
+    apply(plugin = rootProject.libs.plugins.kapt.get().pluginId)
     apply(plugin = rootProject.libs.plugins.spring.get().pluginId)
     apply(plugin = rootProject.libs.plugins.dependencyManagement.get().pluginId)
     apply(plugin = rootProject.libs.plugins.mavenPublish.get().pluginId)
@@ -77,14 +68,18 @@ subprojects {
 
     extensions.configure<SpotlessExtension> {
         kotlin {
-            // by default the target is every '.kt' and '.kts' file in the java source sets
-            ktfmt().kotlinlangStyle().configure {
-                it.setMaxWidth(120)
-            }
-            licenseHeaderFile(
-                "${project.rootDir}/license-template.kt",
-                "package")
+            ktlint()
+                .editorConfigOverride(
+                    mapOf("max_line_length" to "120", "ij_kotlin_indent_before_arrow_on_new_line" to true)
+                )
+            licenseHeaderFile("${project.rootDir}/license-template.kt", "package")
                 .updateYearWithLatest(false)
+        }
+        kotlinGradle {
+            ktlint()
+                .editorConfigOverride(
+                    mapOf("max_line_length" to "120", "ij_kotlin_indent_before_arrow_on_new_line" to true)
+                )
         }
     }
 
@@ -107,7 +102,7 @@ subprojects {
         }
     }
 
-    tasks.register<DependencyReportTask>("dependenciesAll"){
+    tasks.register<DependencyReportTask>("dependenciesAll") {
         description = "Displays all dependencies declared in all sub projects"
         group = "help"
     }

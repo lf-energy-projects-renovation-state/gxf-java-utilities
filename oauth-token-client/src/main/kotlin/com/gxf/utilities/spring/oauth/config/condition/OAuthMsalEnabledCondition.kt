@@ -5,9 +5,9 @@ package com.gxf.utilities.spring.oauth.config.condition
 
 import org.springframework.context.annotation.Condition
 import org.springframework.context.annotation.ConditionContext
+import org.springframework.core.type.AnnotatedTypeMetadata
 
-/** Condition to enable or disable the Oauth Client components */
-abstract class OAuthCondition : Condition {
-    fun oAuthEnabled(context: ConditionContext) =
+class OAuthMsalEnabledCondition : Condition {
+    override fun matches(context: ConditionContext, metadata: AnnotatedTypeMetadata): Boolean =
         context.environment.getProperty("oauth.client.enabled").equals("true", ignoreCase = true)
 }
