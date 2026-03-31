@@ -18,10 +18,6 @@ buildscript {
                 // Temporary: check regularly if still necessary to override plugin classpath dependencies, and remove
                 // when no longer needed
                 eachDependency {
-                    if (requested.group == "tools.jackson.core" && requested.name == "jackson-core") {
-                        useVersion("3.1.1")
-                        because("Override plugin classpath to use non-vulnerable jackson-core 3.1.1")
-                    }
                     if (requested.group == "com.fasterxml.jackson.core" && requested.name == "jackson-core") {
                         useVersion("2.21.2")
                         because(
@@ -39,10 +35,6 @@ configurations.all {
         // Temporary: check regularly if still necessary to override dependency versions, and remove when no longer
         // needed
         eachDependency {
-            if (requested.group == "tools.jackson.core" && requested.name == "jackson-core") {
-                useVersion("3.1.1")
-                because("Override BOM and all constraints to use non-vulnerable jackson-core 3.1.1")
-            }
             if (requested.group == "com.fasterxml.jackson.core" && requested.name == "jackson-core") {
                 useVersion("2.21.2")
                 because(
