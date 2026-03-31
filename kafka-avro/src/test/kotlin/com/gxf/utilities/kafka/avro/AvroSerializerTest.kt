@@ -31,6 +31,6 @@ class AvroSerializerTest {
 
         val result = serializer.serialize(topicName, null)
 
-        assertThat(result).isEqualTo(ByteArray(0))
+        assertThat(result).isNull()
     }
 }
