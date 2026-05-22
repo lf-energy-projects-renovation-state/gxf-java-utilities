@@ -1,0 +1,22 @@
+name: Gradle SBOM upload
+
+on:
+  workflow_dispatch: {}
+  schedule:
+    - cron: "0 10 */5 * *"   # Run every fifth day at 10 AM UTC
+
+permissions:
+  contents: write
+
+jobs:
+  SBOM-upload:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+      - name: Generate and submit dependency graph
+        uses: gradle/actions/dependency-submission@v3
